@@ -1,0 +1,144 @@
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Profile – Resume Builder AI</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/profile.css">
+
+    <script>
+      const savedUser = localStorage.getItem("user");
+      if (!savedUser) {
+        window.location.href = "/";
+      }
+    </script>
+  </head>
+  <body>
+
+  <nav class="app-navbar">
+    <div class="nav-container">
+      <div class="brand">ResumeAI<span class="dot">.</span></div>
+      <div class="user-menu">
+        <button onclick="logout()" class="logout-link">Sign Out</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-container">
+
+    <header class="page-header">
+      <h1 id="profileTitle">Loading profile…</h1>
+      <p id="profileSubtitle">Please wait</p>
+
+    </header>
+
+    <section class="profile-card">
+      
+      <div class="avatar-section">
+        <div class="avatar-placeholder">
+          <span id="avatarInitials">AI</span>
+        </div>
+        <div class="avatar-info">
+          <h3>Profile Details</h3>
+          <p>Ensure your contact info is up to date.</p>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <form id="profileForm">
+
+        
+        <h4 class="section-title">Contact Information</h4>
+        
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="fullName">Full Name <span class="required">*</span></label>
+            <input type="text" id="fullName" placeholder="Ex: John Doe" required>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" class="disabled-input" disabled>
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" placeholder="Ex: +1 (555) 000-0000">
+          </div>
+
+          <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" placeholder="City, Country">
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <h4 class="section-title">Professional Links</h4>
+
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="linkedin">LinkedIn Profile</label>
+            <div class="input-icon-wrapper">
+              <span class="icon">in</span>
+              <input type="url" id="linkedin" placeholder="https://linkedin.com/in/username">
+            </div>
+          </div>
+
+          <div class="form-group full-width">
+            <label for="portfolio">Portfolio / GitHub / Website</label>
+            <div class="input-icon-wrapper">
+              <span class="icon">🌐</span>
+              <input type="url" id="portfolio" placeholder="https://myportfolio.com">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">Save & Continue</button>
+        </div>
+
+      </form>
+    </section>
+
+  </main>
+
+  <script src="/static/js/profile.js"></script>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("user");
+      localStorage.removeItem("profile");
+      window.location.href = "/";
+    }
+
+    // Optional: Update the avatar initials based on the name loaded by profile.js
+    setTimeout(() => {
+      const nameInput = document.getElementById("fullName").value;
+      if (nameInput) {
+        const initials = nameInput.split(" ").map(n => n[0]).join("").substring(0,2).toUpperCase();
+        document.getElementById("avatarInitials").innerText = initials;
+      }
+    }, 100);
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("profileForm");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      saveProfile();
+    });
+  }
+});
+
+
+
+  </script>
+
+  </body>
+  </html>

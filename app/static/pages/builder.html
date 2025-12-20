@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Builder – Resume Builder AI</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/static/css/builder.css">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="brand">ResumeAI<span class="dot">.</span></div>
+      <div class="nav-links">
+        <a href="/profile" class="nav-link">My Profile</a>
+        <a href="/logout" class="nav-link logout">Sign Out</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="builder-container">
+    
+    <div class="header-section">
+      <h1>Resume Builder</h1>
+      <p>Paste your current details and the target job description to optimize your resume.</p>
+    </div>
+
+    <section class="input-grid">
+      
+      <div class="input-card">
+        <div class="card-header">
+          <span class="icon">📄</span>
+          <h3>Your Current Resume</h3>
+        </div>
+        <textarea id="resumeText" placeholder="Paste your current resume content here..."></textarea>
+      </div>
+
+      <div class="input-card">
+        <div class="card-header">
+                    <span class="icon">📄</span>
+         <h3>Target Job Description</h3>
+        </div>
+        <textarea id="jobDescription" placeholder="Paste the job description (JD) here..."></textarea>
+      </div>
+
+    </section>
+
+    <section class="action-bar">
+      <button class="btn-primary" onclick="generateResume()">
+        ✨ Generate AI Resume
+      </button>
+      <button class="btn-secondary" onclick="printResume()">
+        🖨️ Print / Save PDF
+      </button>
+    </section>
+
+    <div class="preview-wrapper">
+      <div class="paper-sheet" id="output" contenteditable="true">
+        <div class="placeholder-text">
+          <h3>Ready to Build?</h3>
+          <p>Your AI-optimized resume will appear here in a clean, professional format.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
