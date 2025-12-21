@@ -47,10 +47,10 @@
         <div class="tool-card">
           <label class="tool-label"><span class="material-icons-round">palette</span> Target Style</label>
           <select id="styleSelect" class="modern-select">
-            <option value="Harvard">Harvard Standard</option>
-            <option value="Modern">Modern Clean</option>
-            <option value="Minimal">Minimalist</option>
-            <option value="Tech">Tech Focus</option>
+            <option value="Harvard">Harvard Style</option>
+            <option value="Tech Focus">Tech Focus Style</option>
+            <option value="Two Column">Two Column Style</option>
+            <option value="Fancy">Fancy Style</option>
           </select>
         </div>
         <div class="credits-badge">
@@ -96,23 +96,13 @@
           </div>
         </div>
 
-        <div class="suggestions-widget">
-          <div class="widget-title">
-            <span class="material-icons-round icon-yellow">lightbulb</span>
-            <span>AI Insights</span>
-          </div>
-          <ul id="suggestionsList" class="compact-list">
-             <li class="placeholder-insight">Generated insights will appear here...</li>
-          </ul>
-        </div>
-
         <button class="btn-icon-text" onclick="printResume()">
           <span class="material-icons-round">print</span> Print PDF
         </button>
       </div>
 
       <div class="preview-scroll-container">
-        <div id="output" class="paper-a4" contenteditable="true">
+        <div id="output" class="paper-a4">
           <div class="paper-placeholder">
             <h3>Resume Preview</h3>
             <p>Click generate to build your resume.</p>

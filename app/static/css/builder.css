@@ -118,38 +118,38 @@ textarea:focus, select:focus { outline: 2px solid var(--primary); border-color: 
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .score-num { font-weight: 800; font-size: 1.1rem; line-height: 1; color: var(--primary); }
+.score-num.high { color: var(--success); }
+.score-num.medium { color: #f57f17; }
+.score-num.low { color: #d32f2f; }
 .score-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-sub); font-weight: 600;}
-
-/* Suggestions Widget */
-.suggestions-widget {
-  flex-grow: 1; margin: 0 30px;
-  background: #fff8e1; border: 1px solid #ffeeba;
-  padding: 10px 15px; border-radius: 8px; font-size: 0.9rem;
-  display: flex; align-items: flex-start; gap: 10px; max-height: 60px; overflow-y: auto;
-}
-.icon-yellow { color: #f57f17; }
-.widget-title { font-weight: 600; display: flex; align-items: center; gap: 5px; color: #856404;}
-.compact-list { list-style: none; margin: 0; padding: 0; flex-grow: 1;}
-.compact-list li { margin-bottom: 4px; color: #856404; }
-.placeholder-insight { font-style: italic; opacity: 0.7; }
 
 /* Preview Scroll Area */
 .preview-scroll-container {
   flex-grow: 1;
   overflow-y: auto; /* Scroll only the paper area */
-  padding: 40px;
-  display: flex; justify-content: center;
+  padding: 40px 20px;
+  display: flex; 
+  justify-content: center;
+  align-items: flex-start; /* Allow paper to start from top */
 }
 
 /* The A4 Paper */
 .paper-a4 {
   background: #fff;
   width: 210mm; min-height: 297mm; /* A4 dimensions */
+  max-width: 210mm; /* Prevent horizontal overflow */
   padding: 20mm;
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
   outline: none;
+  margin: 0 auto; /* Center the paper */
+  /* Allow paper to grow taller than A4 when content is long */
+  height: auto;
+  min-height: 297mm;
   /* Resume typography defaults */
   font-family: 'Times New Roman', serif; color: #000; line-height: 1.4;
+  /* Ensure content doesn't overflow horizontally */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 .paper-placeholder {
   text-align: center; color: #ccc; font-family: 'Inter', sans-serif; padding-top: 100px;
@@ -180,7 +180,6 @@ textarea:focus, select:focus { outline: 2px solid var(--primary); border-color: 
   .preview-pane { height: 800px; } /* Give preview fixed height on mobile stack */
   .paper-a4 { width: 100%; padding: 15mm; }
   .sticky-bar { flex-direction: column; gap: 15px; align-items: flex-start; }
-  .suggestions-widget { margin: 0; width: 100%; }
 }
 
 @media print {
@@ -192,5 +191,14 @@ textarea:focus, select:focus { outline: 2px solid var(--primary); border-color: 
   }
   .paper-a4 {
     box-shadow: none; margin: 0; width: 100%; padding: 0; /* Printer manages margins */
+    height: auto; /* Allow natural height for printing */
+    page-break-inside: avoid; /* Try to keep content together */
+  }
+  /* Handle page breaks for long content */
+  .paper-a4 h1, .paper-a4 h2, .paper-a4 h3 {
+    page-break-after: avoid;
+  }
+  .paper-a4 section {
+    page-break-inside: avoid;
   }
 }

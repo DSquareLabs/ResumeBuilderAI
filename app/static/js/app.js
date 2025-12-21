@@ -1,75 +1,150 @@
-async function generateResume() {
-  const resumeText = document.getElementById("resumeText").value;
-  const jobDescription = document.getElementById("jobDescription").value;
-  const style = document.getElementById("styleSelect").value; // dropdown
+/*************************************************
+ * GLOBAL STATE
+ *************************************************/
+let currentUser = null;
+let currentProfile = null;
 
-  // Check credits first
+/*************************************************
+ * LOAD USER + PROFILE (ON PAGE LOAD)
+ *************************************************/
+async function loadUserProfile() {
+  const storedUser = localStorage.getItem("user");
+
+  if (!storedUser) {
+    if (window.location.pathname !== "/pricing") {
+      window.location.href = "/";
+    }
+    return;
+  }
+
+  currentUser = JSON.parse(storedUser);
+
+  if (!currentUser.email) {
+    console.error("User email missing");
+    window.location.href = "/";
+    return;
+  }
+
+  try {
+    const res = await fetch(
+      `/api/profile?email=${encodeURIComponent(currentUser.email)}`
+    );
+
+    if (!res.ok) {
+      console.error("Failed to load profile");
+      return;
+    }
+
+    currentProfile = await res.json();
+
+    // Show credits
+    const creditEl = document.getElementById("creditCount");
+    if (creditEl) {
+      creditEl.innerText = currentProfile.credits ?? 0;
+    }
+  } catch (err) {
+    console.error("Error loading profile:", err);
+  }
+}
+
+window.onload = loadUserProfile;
+
+/*************************************************
+ * GENERATE RESUME
+ *************************************************/
+async function generateResume() {
+  const resumeText = document.getElementById("resumeText").value.trim();
+  const jobDescription = document.getElementById("jobDescription").value.trim();
+  const style = document.getElementById("styleSelect")?.value || "harvard";
+
+  if (!resumeText || !jobDescription) {
+    alert("Please provide both resume text and job description.");
+    return;
+  }
+
+  // Auth check
+  if (!currentUser || !currentUser.email) {
+    alert("Session expired. Please login again.");
+    window.location.href = "/";
+    return;
+  }
+
+  // Credit check (frontend UX only – backend enforces too)
   if (!currentProfile || currentProfile.credits <= 0) {
     showCreditPopup();
     return;
   }
 
-  // Profile data (already saved earlier)
-  const user = JSON.parse(localStorage.getItem("user"));
-  const profile = JSON.parse(localStorage.getItem("profile")); // optional
+  try {
+    const response = await fetch("/api/generate-resume", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        style: style,
+        resume_text: resumeText,
+        job_description: jobDescription,
 
-  const response = await fetch("/api/generate-resume", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      style: style,
-      resume_text: resumeText,
-      job_description: jobDescription,
+        // profile data
+        full_name: currentProfile.full_name || currentUser.name || "",
+        email: currentUser.email,
+        phone: currentProfile.phone || "",
+        location: currentProfile.location || "",
+        linkedin: currentProfile.linkedin || "",
+        portfolio: currentProfile.portfolio || ""
+      })
+    });
 
-      // user profile data
-      full_name: profile?.full_name || user?.name || "",
-      email: user?.email || "",
-      phone: profile?.phone || "",
-      location: profile?.location || "",
-      linkedin: profile?.linkedin || "",
-      portfolio: profile?.portfolio || ""
-    })
-  });
+    const data = await response.json();
 
-  const data = await response.json();
+    if (!response.ok || !data.resume_html) {
+      alert("Failed to generate resume");
+      console.error(data);
+      return;
+    }
 
-  if (!response.ok || !data.resume_html) {
-    alert("Failed to generate resume");
-    console.error(data);
-    return;
-  }
-
-  if (currentProfile && typeof currentProfile.credits === "number") {
+    // Deduct credit locally for instant UX
     currentProfile.credits -= 1;
-    document.getElementById("creditCount").innerText = currentProfile.credits;
+    const creditEl = document.getElementById("creditCount");
+    if (creditEl) {
+      creditEl.innerText = currentProfile.credits;
+    }
+
+    // Render resume
+    document.getElementById("output").innerHTML = data.resume_html;
+    document.getElementById("output").contentEditable = true;
+
+
+    // ATS Score
+    if (data.ats_score !== undefined) {
+      const atsScoreEl = document.getElementById("atsScore");
+      if (atsScoreEl) {
+        atsScoreEl.innerText = data.ats_score;
+        atsScoreEl.className =
+          data.ats_score >= 80
+            ? "score-num high"
+            : data.ats_score >= 60
+            ? "score-num medium"
+            : "score-num low";
+      }
+    }
+
+    document.getElementById("output").scrollIntoView({ behavior: "smooth" });
+    
+
+  } catch (err) {
+    console.error("Resume generation error:", err);
+    alert("Something went wrong while generating resume.");
   }
-
-  document.getElementById("output").innerHTML = data.resume_html;
-
-  const atsScoreElement = document.getElementById("atsScore");
-  atsScoreElement.innerText = `${data.ats_score}`;
-  atsScoreElement.className = data.ats_score >= 80 ? 'ats-score high' : data.ats_score >= 60 ? 'ats-score medium' : 'ats-score low';
-
-  document.getElementById("suggestions").innerHTML = data.improvement_suggestions
-    .split("\n")
-    .filter(item => item.trim())
-    .map(item => `<li class="suggestion-item">${item.replace(/^-\s*/, "")}</li>`)
-    .join("");
-
-  document.getElementById("resultSection").style.display = "block";
-
-  document.getElementById("resultSection").scrollIntoView({ behavior: 'smooth' });
 }
 
+/*************************************************
+ * CREDIT POPUP
+ *************************************************/
 function showCreditPopup() {
-  // Create overlay
-  const overlay = document.createElement('div');
+  const overlay = document.createElement("div");
   overlay.style.cssText = `
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: rgba(0,0,0,0.7);
     z-index: 1000;
     display: flex;
@@ -77,8 +152,7 @@ function showCreditPopup() {
     justify-content: center;
   `;
 
-  // Create popup
-  const popup = document.createElement('div');
+  const popup = document.createElement("div");
   popup.style.cssText = `
     background: white;
     padding: 30px;
@@ -89,42 +163,31 @@ function showCreditPopup() {
   `;
 
   popup.innerHTML = `
-    <h2 style="color: #dc3545; margin-bottom: 15px;">⚠️ Out of Credits!</h2>
-    <p style="margin-bottom: 20px; color: #666;">You need credits to generate resumes. Purchase more credits to continue.</p>
-    <button id="buyCreditsBtn" style="
-      background: #007bff;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-right: 10px;
-    ">Buy Credits</button>
-    <button id="closePopupBtn" style="
-      background: #6c757d;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-    ">Close</button>
+    <h2 style="color:#dc3545;margin-bottom:15px;">⚠️ Out of Credits</h2>
+    <p style="margin-bottom:20px;color:#555;">
+      You need credits to generate resumes.
+    </p>
+    <button id="buyCreditsBtn"
+      style="background:#007bff;color:white;border:none;padding:12px 24px;border-radius:6px;font-size:16px;margin-right:10px;">
+      Buy Credits
+    </button>
+    <button id="closePopupBtn"
+      style="background:#6c757d;color:white;border:none;padding:12px 24px;border-radius:6px;font-size:16px;">
+      Close
+    </button>
   `;
 
   overlay.appendChild(popup);
   document.body.appendChild(overlay);
 
-  // Event listeners
-  document.getElementById('buyCreditsBtn').onclick = () => {
-    window.location.href = '/pricing';
+  document.getElementById("buyCreditsBtn").onclick = () => {
+    window.location.href = "/pricing";
   };
 
-  document.getElementById('closePopupBtn').onclick = () => {
+  document.getElementById("closePopupBtn").onclick = () => {
     document.body.removeChild(overlay);
   };
 
-  // Close on overlay click
   overlay.onclick = (e) => {
     if (e.target === overlay) {
       document.body.removeChild(overlay);
@@ -132,11 +195,19 @@ function showCreditPopup() {
   };
 }
 
-/* OPEN NEW PAGE AND PRINT */
+/*************************************************
+ * PRINT / SAVE PDF
+ *************************************************/
 function printResume() {
   const content = document.getElementById("output").innerHTML;
 
+  if (!content || content.trim() === "") {
+    alert("Nothing to print.");
+    return;
+  }
+
   const printWindow = window.open("", "_blank");
+
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>
@@ -159,37 +230,9 @@ function printResume() {
   }, 500);
 }
 
-async function loadUserProfile() {
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  if (!user || !user.email) {
-    // Don't redirect on pricing page - it's accessible to non-authenticated users
-    if (window.location.pathname !== '/pricing') {
-      window.location.href = "/";
-    }
-    return;
-  }
-
-  const res = await fetch(
-    `/api/profile?email=${encodeURIComponent(user.email)}`
-  );
-
-  if (!res.ok) {
-    console.error("Failed to load profile");
-    return;
-  }
-
-  currentProfile = await res.json();
-
-  document.getElementById("creditCount").innerText =
-    currentProfile.credits ?? 0;
-}
-window.onload = loadUserProfile;
-
 function logout() {
-      localStorage.removeItem("user");
-      localStorage.removeItem("profile");
-      // Also clear any other potential keys
-      localStorage.removeItem("currentProfile");
-      window.location.href = "/";
-    }
+  localStorage.removeItem("user");
+  localStorage.removeItem("profile");
+  localStorage.removeItem("currentProfile");
+  window.location.href = "/";
+}

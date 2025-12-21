@@ -55,28 +55,81 @@ def generate_resume(data: ResumeInput):
         }
     
     system_prompt = """
-You are a professional resume writer and web developer. Create ATS-friendly resumes in HTML with inline CSS.
+You are an Expert Senior Resume Writer, ATS (Applicant Tracking System) Algorithm Specialist, and Creative Web Developer.
 
-Key guidelines:
-- Use only the provided candidate data
-- Make it professional and industry-standard
-- Optimize for ATS systems with proper headings and keywords
-- Include contact info, summary, experience, education, skills sections
-- Style according to the requested resume style (Harvard, Normal, Minimal, Modern)
-- Provide an ATS compatibility score (0-100) based on keyword matching and format
-- Give 3-5 improvement suggestions
+Your goal is to create a high-scoring, ATS-optimized resume in HTML/CSS format that perfectly matches the requested visual style, based on the provided user details and job description, and then provide insightful gap analysis and improvement suggestions.
+
+CONTENT OPTIMIZATION & REWRITING:
+- Analyze the candidate's current experience against the Target Job Description
+- Rewrite resume content to maximize ATS Match Rate by integrating hard and soft keywords naturally
+- Focus on transferable skills if experience doesn't match perfectly - reframe existing experience to fit new contexts
+- Use "Action Verb + Task + Result" format (Google XYZ formula) for quantifiable results
+- Do not fabricate experience - only enhance and optimize what's provided
+- If user has no relevant experience, suggest building portfolio projects, certifications, or volunteer work
+- Be creative with layout and design while maintaining professionalism
+
+HTML/CSS GENERATION REQUIREMENTS:
+- Generate ONLY the resume content HTML with embedded CSS (not a full HTML document)
+- Start directly with the resume content (name, contact, sections, etc.)
+- Include all CSS in <style> tags within the HTML
+- PERFECTLY implement the specified visual style - be creative and detailed in your interpretation
+- Include @media print CSS for perfect A4/Letter printing
+- Use semantic HTML structure for ATS parsing
+- Use clean, professional fonts appropriate to the style
+- NO <html>, <head>, or <body> tags - just the resume content
+- NO code blocks, NO backticks, NO markdown formatting in the output
+
+VISUAL STYLE IMPLEMENTATION:
+
+For "Harvard" style:
+- Traditional, academic layout with left-aligned text
+- Name in large, bold serif font at top center
+- Contact info below name, right-aligned
+- Section headers in ALL CAPS, bold, with underlines or borders
+- Bullet points with consistent indentation
+- Professional black text, minimal color accents
+- Classic typography with serif headers and sans-serif body
+
+For "Tech Focus" style:
+- Modern tech-inspired design with subtle tech colors
+- Name with modern font, possibly with accent color
+- Clean layout with tech-appropriate sections
+- Subtle use of blue/green accent colors
+- Professional yet approachable design
+- Include relevant tech certifications prominently
+
+For "Two Column" style:
+- Two-column layout using CSS Grid or Flexbox
+- Left column: Contact info, skills, education
+- Right column: Professional summary, work experience
+- Modern typography with clear section separation
+- Balanced white space distribution
+
+For "Fancy" style:
+- Elegant design with tasteful styling
+- Decorative elements like subtle borders or icons
+- Professional color scheme with accent colors
+- Elegant typography (serif for headers, sans-serif for body)
+- Creative layout while maintaining readability
+
+STYLE CREATIVITY GUIDELINES:
+- Each style should have distinct visual characteristics
+- Use appropriate fonts, colors, spacing, and layout for the chosen style
+- Be creative within professional bounds - don't be afraid to experiment with layout
+- Ensure the design is ATS-friendly (semantic HTML, readable fonts)
+- Make the resume visually appealing while prioritizing content optimization
+
+ATS SCORING:
+- Provide honest ATS score (0-100) based on keyword matching, formatting, and JD relevance
+
+CRITICAL: Your output must be ONLY the content between the markers. No explanations, no code blocks, no markdown.
 
 Output format:
 ===RESUME_HTML===
-[HTML document with embedded CSS]
+[Resume content HTML with embedded CSS - NO full HTML document structure]
 
 ===ATS_SCORE===
-[number]
-
-===IMPROVEMENT_SUGGESTIONS===
-- suggestion 1
-- suggestion 2
-- etc.
+[number 0-100]
 """
 
     # Build candidate profile string, omitting empty fields
@@ -95,22 +148,50 @@ Output format:
         profile_lines.append(f"Portfolio: {data.portfolio}")
     profile_info = "\n".join(profile_lines)
 
+    # Debug: Print what we're sending
+    print("DEBUG: Style:", data.style)
+    print("DEBUG: Profile Info:", repr(profile_info))
+    print("DEBUG: Full Name:", repr(data.full_name))
+    print("DEBUG: Email:", repr(data.email))
+
     user_prompt = f"""
-Hey, act as a professional resume expert and help me create an ATS-friendly resume in HTML with inline CSS.
+Create a high-scoring, ATS-optimized resume based on the following:
 
-Use this style: {data.style}
+VISUAL STYLE: {data.style}
 
-Candidate details:
+CANDIDATE PROFILE INFORMATION (MANDATORY - USE THIS IN RESUME HEADER):
 {profile_info}
 
-My current resume content:
+CURRENT RESUME CONTENT:
 {data.resume_text}
 
-Target job description:
+TARGET JOB DESCRIPTION:
 {data.job_description}
 
-Please create a professional resume that matches this job and scores well on ATS systems.
+CRITICAL REQUIREMENTS:
+- STYLE IMPLEMENTATION: You MUST implement the "{data.style}" visual style exactly as specified in the system prompt
+- PROFILE USAGE: If candidate profile information is provided above, you MUST include it in the resume header/contact section
+- If no profile information is provided, create a generic professional header with placeholder information
+- The profile information is provided for context but is not mandatory - use it if available
+
+INSTRUCTIONS:
+- Analyze experience against the JD and optimize for maximum ATS matching
+- Integrate relevant keywords naturally and strategically throughout the resume
+- Focus on transferable skills and quantifiable achievements using action verbs
+- If the candidate has limited or no relevant experience, suggest and include:
+  * Personal projects that demonstrate relevant skills
+  * Online courses, certifications, or bootcamps
+  * Volunteer work, internships, or freelance projects
+  * Transferable skills from other life experiences
+- Be creative with the layout while maintaining ATS compatibility
+- Ensure the resume highlights the candidate's potential and growth mindset
 """
+
+    # Debug: Print what we're sending to AI
+    print("DEBUG: Selected Style:", data.style)
+    print("DEBUG: Profile Info:", profile_info)
+    print("DEBUG: Resume Text Length:", len(data.resume_text))
+    print("DEBUG: Job Description Length:", len(data.job_description))
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -123,29 +204,36 @@ Please create a professional resume that matches this job and scores well on ATS
 
     content = response.choices[0].message.content
 
+
+
     try:
+        # Clean the content first - remove any code blocks
+        content = content.replace('```html', '').replace('```', '').strip()
+        
         resume_html = content.split("===RESUME_HTML===")[1].split("===ATS_SCORE===")[0].strip()
-        ats_score = content.split("===ATS_SCORE===")[1].split("===IMPROVEMENT_SUGGESTIONS===")[0].strip()
-        improvement_suggestions = content.split("===IMPROVEMENT_SUGGESTIONS===")[1].strip()
+        ats_score = content.split("===ATS_SCORE===")[1].strip()
+          
+        # Clean up any remaining markdown or code formatting
+        resume_html = resume_html.replace('```', '').strip()
+        ats_score = ats_score.replace('```', '').strip()
           
         deduct_credit(db, data.email)
         
-    except Exception:
+    except Exception as e:
         return {
             "error": "Failed to parse AI response",
-            "raw_response": content
+            "raw_response": content,
+            "parse_error": str(e)
         }
 
     # Debug: Print generated content
     print("DEBUG: Generated resume_html (first 500 chars):")
     print(resume_html[:500])
     print("DEBUG: ATS Score:", ats_score)
-    print("DEBUG: Improvement Suggestions:", improvement_suggestions)
 
     return {
         "resume_html": resume_html,
-        "ats_score": ats_score,
-        "improvement_suggestions": improvement_suggestions
+        "ats_score": ats_score
     }
     
 @app.get("/dx")
