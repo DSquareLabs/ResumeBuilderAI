@@ -1,21 +1,43 @@
-function selectPlan(planType) {
-  // For now, just show an alert. In a real app, this would integrate with payment processing
-  const planDetails = {
-    starter: { name: 'Starter', price: '$9/month', credits: '50' },
-    professional: { name: 'Professional', price: '$19/month', credits: '200' },
-    enterprise: { name: 'Enterprise', price: '$49/month', credits: 'Unlimited' }
-  };
+async function selectPlan(plan) {
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const plan = planDetails[planType];
+  if (!user || !user.email) {
+    alert("Please sign in to continue");
+    window.location.href = "/";
+    return;
+  }
 
-  alert(`🎉 You selected the ${plan.name} plan!\n\nPrice: ${plan.price}\nCredits: ${plan.credits} generations\n\nPayment integration coming soon!`);
+  try {
+    const res = await fetch("/api/billing/create-checkout-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        plan: plan,          // basic | popular | pro
+        email: user.email,   // REQUIRED
+      }),
+    });
 
-  // In a real implementation, you would:
-  // 1. Redirect to payment processor (Stripe, PayPal, etc.)
-  // 2. Handle successful payment
-  // 3. Update user credits in database
-  // 4. Redirect back to builder
+    if (!res.ok) {
+      const err = await res.json();
+      console.error("Checkout error:", err);
+      alert("Failed to start checkout");
+      return;
+    }
+
+    const data = await res.json();
+
+    // Redirect to Stripe Checkout
+    window.location.href = data.checkout_url;
+
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Something went wrong");
+  }
 }
+
+
 
 // Add some interactive effects
 document.addEventListener('DOMContentLoaded', function() {

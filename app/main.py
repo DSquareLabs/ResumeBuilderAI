@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from app.api.profile import router as profile_router
+from app.api.billing import router as billing_router
 
 from app.database import engine, Base
 from app.models.profile import Profile
@@ -269,3 +270,4 @@ def result_page(resume_id: int):
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.include_router(profile_router, prefix="/api")
+app.include_router(billing_router)
