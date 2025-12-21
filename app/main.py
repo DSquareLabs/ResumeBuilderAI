@@ -29,41 +29,122 @@ app.add_middleware(
 
 
 class ResumeInput(BaseModel):
+    style: str
     resume_text: str
     job_description: str
+
+    # User profile data
+    full_name: str
+    email: str
+    phone: str | None = ""
+    location: str | None = ""
+    linkedin: str | None = ""
+    portfolio: str | None = ""
     
 @app.post("/api/generate")
 def generate_resume(data: ResumeInput):
-    prompt = f"""
-You are a professional resume editor.
+    # Debug: Print incoming data
+    print("DEBUG: Received data:")
+    print(f"Style: {data.style}")
+    print(f"Full Name: {data.full_name}")
+    print(f"Email: {data.email}")
+    print(f"Phone: {data.phone}")
+    print(f"Location: {data.location}")
+    print(f"LinkedIn: {data.linkedin}")
+    print(f"Portfolio: {data.portfolio}")
+    print(f"Resume Text Length: {len(data.resume_text)}")
+    print(f"Job Description Length: {len(data.job_description)}")
+    
+    system_prompt = """
+You are a professional resume writer and web developer. Create ATS-friendly resumes in HTML with inline CSS.
 
-Rules:
-- Do NOT invent experience
-- Do NOT add skills not present
-- Optimize for ATS
-- Keep it concise
+Key guidelines:
+- Use only the provided candidate data
+- Make it professional and industry-standard
+- Optimize for ATS systems with proper headings and keywords
+- Include contact info, summary, experience, education, skills sections
+- Style according to the requested resume style (Harvard, Normal, Minimal, Modern)
+- Provide an ATS compatibility score (0-100) based on keyword matching and format
+- Give 3-5 improvement suggestions
 
-Resume:
+Output format:
+===RESUME_HTML===
+[HTML document with embedded CSS]
+
+===ATS_SCORE===
+[number]
+
+===IMPROVEMENT_SUGGESTIONS===
+- suggestion 1
+- suggestion 2
+- etc.
+"""
+
+    # Build candidate profile string, omitting empty fields
+    profile_lines = []
+    if data.full_name:
+        profile_lines.append(f"Full Name: {data.full_name}")
+    if data.email:
+        profile_lines.append(f"Email: {data.email}")
+    if data.phone:
+        profile_lines.append(f"Phone: {data.phone}")
+    if data.location:
+        profile_lines.append(f"Location: {data.location}")
+    if data.linkedin:
+        profile_lines.append(f"LinkedIn: {data.linkedin}")
+    if data.portfolio:
+        profile_lines.append(f"Portfolio: {data.portfolio}")
+    profile_info = "\n".join(profile_lines)
+
+    user_prompt = f"""
+Hey, act as a professional resume expert and help me create an ATS-friendly resume in HTML with inline CSS.
+
+Use this style: {data.style}
+
+Candidate details:
+{profile_info}
+
+My current resume content:
 {data.resume_text}
 
-Job Description:
+Target job description:
 {data.job_description}
 
-Return valid HTML only.
+Please create a professional resume that matches this job and scores well on ATS systems.
 """
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are an expert resume editor."},
-            {"role": "user", "content": prompt}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
         ],
-        max_tokens=800
+        max_tokens=3500
     )
 
+    content = response.choices[0].message.content
+
+    try:
+        resume_html = content.split("===RESUME_HTML===")[1].split("===ATS_SCORE===")[0].strip()
+        ats_score = content.split("===ATS_SCORE===")[1].split("===IMPROVEMENT_SUGGESTIONS===")[0].strip()
+        improvement_suggestions = content.split("===IMPROVEMENT_SUGGESTIONS===")[1].strip()
+    except Exception:
+        return {
+            "error": "Failed to parse AI response",
+            "raw_response": content
+        }
+
+    # Debug: Print generated content
+    print("DEBUG: Generated resume_html (first 500 chars):")
+    print(resume_html[:500])
+    print("DEBUG: ATS Score:", ats_score)
+    print("DEBUG: Improvement Suggestions:", improvement_suggestions)
+
     return {
-        "html": response.choices[0].message.content
-    } 
+        "resume_html": resume_html,
+        "ats_score": ats_score,
+        "improvement_suggestions": improvement_suggestions
+    }
     
 @app.get("/dx")
 def home():

@@ -3,72 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Builder – Resume Builder AI</title>
+  <title>Studio – Resume Builder AI</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
   
   <link rel="stylesheet" href="/static/css/builder.css">
 </head>
 <body>
 
   <nav class="navbar">
-    <div class="nav-container">
-      <div class="brand">ResumeAI<span class="dot">.</span></div>
-      <div class="nav-links">
-        <a href="/profile" class="nav-link">My Profile</a>
-        <a href="/logout" class="nav-link logout">Sign Out</a>
-      </div>
+    <div class="brand">ResumeAI<span class="dot">.</span> Studio</div>
+    <div class="nav-links">
+      <a href="/profile" class="nav-link icon-link"><span class="material-icons-round">person</span>Profile</a>
+      <a href="/logout" class="nav-link logout icon-link"><span class="material-icons-round">logout</span>Sign Out</a>
     </div>
   </nav>
 
-  <main class="builder-container">
-    
-    <div class="header-section">
-      <h1>Resume Builder</h1>
-      <p>Paste your current details and the target job description to optimize your resume.</p>
-    </div>
+  <main class="studio-container">
 
-    <section class="input-grid">
+    <section class="editor-pane">
+      <div class="pane-header">
+        <h2>Input Data</h2>
+        <p>Paste your details to generate.</p>
+      </div>
+
+      <div class="editor-scroll-content">
+        
+        <div class="tool-card">
+          <label class="tool-label"><span class="material-icons-round">palette</span> Target Style</label>
+          <select id="styleSelect" class="modern-select">
+            <option value="Harvard">Harvard Standard</option>
+            <option value="Modern">Modern Clean</option>
+            <option value="Minimal">Minimalist</option>
+            <option value="Tech">Tech Focus</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">
+            <span class="material-icons-round">description</span> Your Current Resume
+          </label>
+          <textarea id="resumeText" placeholder="Paste content here..."></textarea>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">
+            <span class="material-icons-round">work</span> Target Job Description
+          </label>
+          <textarea id="jobDescription" placeholder="Paste JD here..."></textarea>
+        </div>
+
+      </div>
+
+      <div class="editor-actions">
+        <button class="btn-primary full-width" onclick="generateResume()">
+          <span class="material-icons-round">auto_awesome</span> Generate Resume
+        </button>
+      </div>
+
+    </section>
+
+
+    <section class="preview-pane">
       
-      <div class="input-card">
-        <div class="card-header">
-          <span class="icon">📄</span>
-          <h3>Your Current Resume</h3>
+      <div class="analysis-header sticky-bar">
+        
+        <div class="ats-widget">
+           <div class="gauge-circle" style="--score: 0;">
+             <div class="gauge-inner">
+               <span id="atsScore" class="score-num">--</span>
+               <span class="score-label">ATS Score</span>
+             </div>
+          </div>
         </div>
-        <textarea id="resumeText" placeholder="Paste your current resume content here..."></textarea>
+
+        <div class="suggestions-widget">
+          <div class="widget-title">
+            <span class="material-icons-round icon-yellow">lightbulb</span>
+            <span>AI Insights</span>
+          </div>
+          <ul id="suggestionsList" class="compact-list">
+             <li class="placeholder-insight">Generated insights will appear here...</li>
+          </ul>
+        </div>
+
+        <button class="btn-icon-text" onclick="printResume()">
+          <span class="material-icons-round">print</span> Print PDF
+        </button>
       </div>
 
-      <div class="input-card">
-        <div class="card-header">
-                    <span class="icon">📄</span>
-         <h3>Target Job Description</h3>
+      <div class="preview-scroll-container">
+        <div id="output" class="paper-a4" contenteditable="true">
+          <div class="paper-placeholder">
+            <h3>Resume Preview</h3>
+            <p>Click generate to build your resume.</p>
+          </div>
         </div>
-        <textarea id="jobDescription" placeholder="Paste the job description (JD) here..."></textarea>
       </div>
 
     </section>
-
-    <section class="action-bar">
-      <button class="btn-primary" onclick="generateResume()">
-        ✨ Generate AI Resume
-      </button>
-      <button class="btn-secondary" onclick="printResume()">
-        🖨️ Print / Save PDF
-      </button>
-    </section>
-
-    <div class="preview-wrapper">
-      <div class="paper-sheet" id="output" contenteditable="true">
-        <div class="placeholder-text">
-          <h3>Ready to Build?</h3>
-          <p>Your AI-optimized resume will appear here in a clean, professional format.</p>
-        </div>
-      </div>
-    </div>
 
   </main>
 
   <script src="/static/js/app.js"></script>
+  
+  <script>
+      // Example: When your app.js calculates the score, update the CSS variable
+      function updateGauge(score) {
+          const gauge = document.querySelector('.gauge-circle');
+          const scoreText = document.getElementById('atsScore');
+          if(gauge && scoreText) {
+               // Update the CSS variable for the visual chart
+              gauge.style.setProperty('--score', score);
+              // Update the text number
+              scoreText.innerText = score;
+          }
+      }
+      // Uncomment to test visual:
+      // setTimeout(() => { updateGauge(85); }, 2000); 
+  </script>
 </body>
 </html>
