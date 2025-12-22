@@ -149,7 +149,12 @@ async function generateResume() {
     }
 
     document.getElementById("output").scrollIntoView({ behavior: "smooth" });
-    
+
+    const refineBar = document.getElementById("aiRefineBar");
+    if (refineBar) {
+        refineBar.style.display = "block"; 
+    }
+      
     finishGenerate();
 
   } catch (err) {
@@ -215,6 +220,77 @@ function showCreditPopup() {
       document.body.removeChild(overlay);
     }
   };
+}
+
+
+/*************************************************
+ * UPDATE RESUME WITH AI (Refine)
+ *************************************************/
+async function updateResumeWithAI() {
+  const inputEl = document.querySelector('.refine-input');
+  const instruction = inputEl.value.trim();
+  
+  if (!instruction) return; // Don't send empty requests
+
+  // 1. Credit Check (0.5 Credits)
+  if (!currentProfile || currentProfile.credits < 0.5) {
+    showCreditPopup();
+    return;
+  }
+
+  // 2. UI Loading State (Spin the arrow)
+  const btn = document.querySelector('.btn-refine-send');
+  const originalIcon = btn.innerHTML;
+  btn.innerHTML = '<span class="material-icons-round">hourglass_empty</span>';
+  btn.disabled = true;
+  inputEl.disabled = true;
+
+  try {
+    const currentHTML = document.getElementById('output').innerHTML;
+
+    // 3. Send to Backend
+    // Note: You need to create this endpoint in your Python/Node backend
+    const response = await fetch("/api/refine-resume", { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        html: currentHTML,
+        instruction: instruction,
+        email: currentUser.email
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.updated_html) {
+      throw new Error(data.error || "Failed to update");
+    }
+
+    // 4. Update the Resume
+    document.getElementById('output').innerHTML = data.updated_html;
+    
+    // 5. Deduct 0.5 Credits
+  currentProfile.credits = data.credits_left;
+  document.getElementById("creditCount").innerText = data.credits_left;
+
+
+    // 6. Success Feedback
+    inputEl.value = ''; // Clear input
+    btn.style.background = "#10B981"; // Green flash
+    setTimeout(() => { 
+        btn.style.background = ""; // Reset color
+    }, 1000);
+
+  } catch (err) {
+    console.error("Refine error:", err);
+    alert("Could not update resume. Please try again.");
+  } finally {
+    // Reset UI
+    btn.innerHTML = originalIcon;
+    btn.disabled = false;
+    inputEl.disabled = false;
+    inputEl.focus();
+  }
 }
 
 /*************************************************

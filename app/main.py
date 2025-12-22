@@ -29,7 +29,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+ENV = os.getenv("ENV", "dev")
 
+app = FastAPI(
+    docs_url=None if ENV == "prod" else "/docs",
+    redoc_url=None if ENV == "prod" else "/redoc"
+)
 
 class ResumeInput(BaseModel):
     style: str
@@ -195,12 +200,12 @@ INSTRUCTIONS:
     print("DEBUG: Job Description Length:", len(data.job_description))
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5.1",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        max_tokens=3500
+        max_completion_tokens=5000,
     )
 
     content = response.choices[0].message.content
@@ -271,3 +276,7 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.include_router(profile_router, prefix="/api")
 app.include_router(billing_router)
+
+from app.api.refine import router as refine_router
+app.include_router(refine_router)
+
