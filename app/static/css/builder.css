@@ -371,3 +371,97 @@ textarea:focus, .modern-select:focus {
 .btn-refine-send:active { transform: scale(0.95); }
 
 
+/* Add to existing CSS */
+
+/* --- TABS --- */
+.view-toggle-container {
+    background: #F3F4F6;
+    padding: 4px;
+    border-radius: 12px;
+    display: flex;
+    gap: 4px;
+}
+
+.view-tab {
+    border: none;
+    background: transparent;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-sub);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.view-tab.active {
+    background: white;
+    color: var(--text-main);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.view-tab:hover:not(.active) {
+    color: var(--text-main);
+}
+
+/* --- MODAL --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 { font-size: 1.5rem; font-weight: 700; }
+
+.modal-subtitle {
+    color: var(--text-sub);
+    margin-bottom: 24px;
+}
+
+.modern-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #F3F4F6;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.modern-textarea.short {
+    min-height: 80px;
+    height: 80px;
+}
+
+.text-gradient {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.btn-icon {
+    background: none; border: none; cursor: pointer; color: var(--text-sub);
+}

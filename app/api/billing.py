@@ -25,7 +25,7 @@ CREDIT_PACKS = {
     },
     "pro": {
         "price_id": "price_1SgmxSPgGW2HhSGkYEpqzVUf",
-        "credits": 00
+        "credits": 800
     }
 }
 
@@ -95,7 +95,6 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         email = metadata.get("email")
         pack_id = metadata.get("pack_id")
 
-        # 👇 IMPORTANT: ignore fake CLI events
         if not email or not pack_id:
             print("Webhook received test event without metadata, ignoring.")
             return {"status": "ignored"}

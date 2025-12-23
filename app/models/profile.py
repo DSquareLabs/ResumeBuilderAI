@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Float, Integer, String
 from app.database import Base
 
 class Profile(Base):
@@ -12,4 +12,4 @@ class Profile(Base):
     location = Column(String)
     linkedin = Column(String)
     portfolio = Column(String)
-    credits = Column(Integer, default=5)    
+    credits = Column(Float, default=5.0)  # Default free credits upon profile creation    

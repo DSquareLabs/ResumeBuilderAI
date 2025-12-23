@@ -86,46 +86,93 @@
     
     <div class="preview-hud">
       <div class="hud-group">
-        <div class="ats-score-pill">
-           <div class="score-circle" style="--score-deg: 0deg;">
-             <div class="score-inner" id="atsScore">--</div>
-           </div>
-           <span>ATS Score</span>
+        <div class="view-toggle-container">
+            <button class="view-tab active" onclick="switchView('resume')">
+                <span class="material-icons-round">description</span> Resume
+            </button>
+            <button class="view-tab" onclick="switchView('coverletter')">
+                <span class="material-icons-round">mail</span> Cover Letter
+            </button>
         </div>
       </div>
 
       <div class="hud-group">
-        <button class="btn-ghost" onclick="printResume()">
+        <div class="ats-score-pill" id="atsContainer">
+           <div class="score-circle">
+             <div class="score-inner" id="atsScore">--</div>
+           </div>
+           <span>ATS Score</span>
+        </div>
+        <button class="btn-ghost" onclick="printActiveDocument()">
           <span class="material-icons-round">download</span> PDF
         </button>
       </div>
     </div>
 
     <div class="preview-scroller">
+      
       <div id="output" class="paper-a4">
-        
         <div class="empty-state">
            <span class="material-icons-round empty-icon">description</span>
            <h3>Ready to Create</h3>
            <p>Enter your details on the left and hit Generate.</p>
         </div>
-
       </div>
+
+      <div id="output-cl" class="paper-a4" style="display: none;">
+        <div class="empty-state">
+           <span class="material-icons-round empty-icon">mark_email_unread</span>
+           <h3>Cover Letter</h3>
+           <p>Switching contexts... <br>Click "Generate Cover Letter" to start.</p>
+        </div>
+      </div>
+
     </div>
 
     <div id="aiRefineBar" class="refine-bar-container" style="display: none;">
-  <div class="refine-input-wrapper">
-    
-    <div class="refine-cost-badge">
-      <span class="material-icons-round">bolt</span> 0.5 Credits
+      <div class="refine-input-wrapper">
+         <div class="refine-cost-badge">
+            <span class="material-icons-round">bolt</span> 0.5 Credits
+         </div>
+         <input type="text" id="refineInput" class="refine-input" placeholder="Ask AI to adjust...">
+         <button class="btn-refine-send" onclick="handleRefine()">
+            <span class="material-icons-round">arrow_upward</span>
+         </button>
+      </div>
     </div>
 
-    <input type="text" class="refine-input" placeholder="Ask AI to adjust (e.g. 'Make the summary shorter' or 'Fix grammar')...">
-    
-    <button class="btn-refine-send" onclick="updateResumeWithAI()">
-      <span class="material-icons-round">arrow_upward</span>
-    </button>
-  </div>
+  </section>
+
+<div id="clModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><span class="text-gradient">Craft Your Narrative</span></h3>
+            <button onclick="closeCLModal()" class="btn-icon"><span class="material-icons-round">close</span></button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-subtitle">The AI knows your skills. Tell us your motivation.</p>
+            
+            <div class="input-group">
+                <label class="input-label">Hiring Manager Name (Optional)</label>
+                <input type="text" id="clManager" class="modern-input" placeholder="e.g. Mr. Smith or Hiring Team">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Why this company? (The Hook)</label>
+                <textarea id="clMotivation" class="modern-textarea short" placeholder="I've admired [Company] for years because..."></textarea>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Key Achievement to Highlight</label>
+                <textarea id="clHighlight" class="modern-textarea short" placeholder="e.g. My success in scaling the database..."></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-magic" onclick="submitCoverLetterGen()">
+                <span class="material-icons-round">auto_awesome</span> Write Letter
+            </button>
+        </div>
+    </div>
 </div>
 
   </section>

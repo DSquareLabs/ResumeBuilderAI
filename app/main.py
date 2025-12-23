@@ -280,3 +280,5 @@ app.include_router(billing_router)
 from app.api.refine import router as refine_router
 app.include_router(refine_router)
 
+from app.api.cover_letter import router as cover_letter_router
+app.include_router(cover_letter_router)
