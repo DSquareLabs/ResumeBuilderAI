@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -14,7 +14,17 @@ from app.models.profile import Profile
 
 Base.metadata.create_all(bind=engine)
 
-from app.services.credits import has_credits, deduct_credit, add_credits, get_credits
+from app.services.credits import (
+    has_credits, 
+    deduct_credit, 
+    add_credits, 
+    get_credits, 
+    deduct_credit_atomic, 
+    refund_credit,
+    GENERATE_COST,
+    CHAR_LIMIT_RESUME_EXPERIENCE,
+    CHAR_LIMIT_JOB_DESCRIPTION
+)
 from app.database import get_db
 
 load_dotenv()
@@ -53,12 +63,32 @@ class ResumeInput(BaseModel):
 def generate_resume(data: ResumeInput):
     
     db = next(get_db())
-
-    if not has_credits(db, data.email):
-        return {
-            "error": "NO_CREDITS",
-            "message": "You have no credits left. Please purchase more."
-        }
+    
+    # ✅ VALIDATION 1: Character Limits
+    if len(data.resume_text) > CHAR_LIMIT_RESUME_EXPERIENCE:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Your Experience exceeds {CHAR_LIMIT_RESUME_EXPERIENCE} characters. Please trim it down."
+        )
+    
+    if len(data.job_description) > CHAR_LIMIT_JOB_DESCRIPTION:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Job Description exceeds {CHAR_LIMIT_JOB_DESCRIPTION} characters. Please trim it down."
+        )
+    
+    # ✅ VALIDATION 2: Check credits exist
+    if not has_credits(db, data.email, GENERATE_COST):
+        raise HTTPException(
+            status_code=402, 
+            detail=f"Insufficient credits. You need {GENERATE_COST} credits to generate a resume."
+        )
+    
+    # ✅ ATOMIC OPERATION 1: Deduct credits FIRST (cut first)
+    try:
+        remaining_credits = deduct_credit_atomic(db, data.email, GENERATE_COST)
+    except HTTPException as e:
+        raise e
     
     system_prompt = """
 You are an Expert Senior Resume Writer, ATS (Applicant Tracking System) Algorithm Specialist, and Creative Web Developer.
@@ -210,9 +240,8 @@ INSTRUCTIONS:
 
     content = response.choices[0].message.content
 
-
-
     try:
+        # ✅ ATOMIC OPERATION 2: Parse response successfully before we committed credits
         # Clean the content first - remove any code blocks
         content = content.replace('```html', '').replace('```', '').strip()
         
@@ -222,15 +251,19 @@ INSTRUCTIONS:
         # Clean up any remaining markdown or code formatting
         resume_html = resume_html.replace('```', '').strip()
         ats_score = ats_score.replace('```', '').strip()
-          
-        deduct_credit(db, data.email)
         
+        # Validate we got valid output
+        if not resume_html or not ats_score:
+            raise ValueError("Empty HTML or ATS score from AI")
+          
     except Exception as e:
-        return {
-            "error": "Failed to parse AI response",
-            "raw_response": content,
-            "parse_error": str(e)
-        }
+        # ✅ REFUND: Operation failed, return credits
+        refund_credit(db, data.email, GENERATE_COST)
+        print(f"Resume generation failed, refunding {GENERATE_COST} credits. Error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="AI generation failed. Credits have been refunded."
+        )
 
     # Debug: Print generated content
     print("DEBUG: Generated resume_html (first 500 chars):")
@@ -239,7 +272,8 @@ INSTRUCTIONS:
 
     return {
         "resume_html": resume_html,
-        "ats_score": ats_score
+        "ats_score": ats_score,
+        "credits_left": remaining_credits
     }
     
 @app.get("/dx")

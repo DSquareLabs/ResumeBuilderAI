@@ -57,11 +57,13 @@
           <input type="file" id="fileUpload" style="display:none" accept=".pdf">
         </label>
         <textarea id="resumeText" placeholder="Paste your current resume content here, or upload a PDF above..."></textarea>
+        <div id="resumeCounter" style="font-size:12px; color:#666; margin-top:4px; text-align:right;"></div>
       </div>
 
       <div class="input-group">
         <label class="input-label">Target Job Description</label>
         <textarea id="jobDescription" placeholder="Paste the job description here. The AI will optimize keywords for this specific role..."></textarea>
+        <div id="jobCounter" style="font-size:12px; color:#666; margin-top:4px; text-align:right;"></div>
       </div>
 
     </div>
@@ -134,7 +136,10 @@
          <div class="refine-cost-badge">
             <span class="material-icons-round">bolt</span> 0.5 Credits
          </div>
-         <input type="text" id="refineInput" class="refine-input" placeholder="Ask AI to adjust...">
+         <div style="flex: 1;">
+            <input type="text" id="refineInput" class="refine-input" placeholder="Ask AI to adjust...">
+            <div id="refineCounter" style="font-size:11px; color:#666; margin-top:3px; text-align:right; position:absolute; right:10%;"></div>
+         </div>
          <button class="btn-refine-send" onclick="handleRefine()">
             <span class="material-icons-round">arrow_upward</span>
          </button>
@@ -160,11 +165,13 @@
             <div class="input-group">
                 <label class="input-label">Why this company? (The Hook)</label>
                 <textarea id="clMotivation" class="modern-textarea short" placeholder="I've admired [Company] for years because..."></textarea>
+                <div id="clMotivationCounter" style="font-size:11px; color:#666; margin-top:3px; text-align:right;"></div>
             </div>
 
             <div class="input-group">
                 <label class="input-label">Key Achievement to Highlight</label>
                 <textarea id="clHighlight" class="modern-textarea short" placeholder="e.g. My success in scaling the database..."></textarea>
+                <div id="clHighlightCounter" style="font-size:11px; color:#666; margin-top:3px; text-align:right;"></div>
             </div>
         </div>
         <div class="modal-footer">

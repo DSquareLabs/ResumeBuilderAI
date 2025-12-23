@@ -4,8 +4,14 @@ from openai import OpenAI
 import os
 
 from app.database import get_db
-from app.services.credits import deduct_refine_credit, has_credits
-from app.models.profile import Profile # We need this to check credits without deducting
+from app.services.credits import (
+    deduct_credit_atomic, 
+    refund_credit, 
+    has_credits,
+    REFINE_COST,
+    CHAR_LIMIT_ASK_AI_ADJUST
+)
+from app.models.profile import Profile
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api", tags=["refine"])
@@ -20,11 +26,25 @@ class RefineRequest(BaseModel):
 
 @router.post("/refine-resume")
 def refine_resume(data: RefineRequest, db: Session = Depends(get_db)):
-    # 1️⃣ Check if user HAS credits (don't deduct yet)
-    # We query the user manually here or use a helper
-    user = db.query(Profile).filter(Profile.email == data.email).first()
-    if not user or user.credits < 0.5:
-         raise HTTPException(status_code=402, detail="Insufficient credits")
+    # ✅ VALIDATION 1: Character Limit on instruction
+    if len(data.instruction) > CHAR_LIMIT_ASK_AI_ADJUST:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Your instruction exceeds {CHAR_LIMIT_ASK_AI_ADJUST} characters. Please be more concise."
+        )
+    
+    # ✅ VALIDATION 2: Check if user has credits
+    if not has_credits(db, data.email, REFINE_COST):
+        raise HTTPException(
+            status_code=402, 
+            detail=f"Insufficient credits. You need {REFINE_COST} credits to refine."
+        )
+
+    # ✅ ATOMIC OPERATION 1: Deduct credits FIRST
+    try:
+        remaining_credits = deduct_credit_atomic(db, data.email, REFINE_COST)
+    except HTTPException as e:
+        raise e
 
     # 2️⃣ AI Prompt
     context_instruction = "You are refining a Resume."
@@ -53,7 +73,7 @@ def refine_resume(data: RefineRequest, db: Session = Depends(get_db)):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o", # Updated model
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You refine resumes/cover letters without changing structure."},
                 {"role": "user", "content": prompt}
@@ -63,15 +83,21 @@ def refine_resume(data: RefineRequest, db: Session = Depends(get_db)):
         updated_html = response.choices[0].message.content.strip()
         updated_html = updated_html.replace('```html', '').replace('```', '').strip()
         
-        # 3️⃣ SUCCESS! Now we deduct the credits.
-        # We reuse the helper, or you can do it manually here to be safe.
-        credits_left = deduct_refine_credit(db, data.email)
-
+        # ✅ VALIDATION 3: Validate we got content back
+        if not updated_html:
+            raise ValueError("Empty response from AI")
+        
+        # ✅ SUCCESS! Credits already deducted (atomic)
         return {
             "updated_html": updated_html,
-            "credits_left": credits_left
+            "credits_left": remaining_credits
         }
 
     except Exception as e:
-        print(f"Refine Error: {e}")
-        raise HTTPException(status_code=500, detail="AI generation failed. No credits were deducted.")
+        # ✅ REFUND: Operation failed, return credits
+        refund_credit(db, data.email, REFINE_COST)
+        print(f"Refine failed, refunding {REFINE_COST} credits. Error: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail="AI refinement failed. Credits have been refunded."
+        )

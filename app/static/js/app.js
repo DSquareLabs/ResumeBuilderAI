@@ -4,6 +4,14 @@
 let currentUser = null;
 let currentProfile = null;
 
+// Character Limits (must match backend)
+const CHAR_LIMITS = {
+  resume_experience: 6000,
+  job_description: 6000,
+  ask_ai_adjust: 4000,
+  cover_letter_extra: 1000
+};
+
 /*************************************************
  * LOAD USER + PROFILE (ON PAGE LOAD)
  *************************************************/
@@ -47,11 +55,116 @@ async function loadUserProfile() {
   }
 }
 
-window.onload = loadUserProfile;
+window.onload = () => {
+  loadUserProfile();
+  setupCharacterCounters();
+};
 
 /*************************************************
- * LOADING FUNCTIONS
+ * CHARACTER COUNTER SETUP & UTILITIES
  *************************************************/
+function setupCharacterCounters() {
+  // Resume Text Counter
+  const resumeEl = document.getElementById("resumeText");
+  if (resumeEl) {
+    setupCounterForElement(resumeEl, "resumeCounter", CHAR_LIMITS.resume_experience);
+  }
+
+  // Job Description Counter
+  const jobEl = document.getElementById("jobDescription");
+  if (jobEl) {
+    setupCounterForElement(jobEl, "jobCounter", CHAR_LIMITS.job_description);
+  }
+
+  // Refine Input Counter (Ask AI to Adjust)
+  const refineEl = document.querySelector('.refine-input');
+  if (refineEl) {
+    setupCounterForElement(refineEl, "refineCounter", CHAR_LIMITS.ask_ai_adjust);
+  }
+
+  // Cover Letter Modal Counters
+  const motivationEl = document.getElementById("clMotivation");
+  if (motivationEl) {
+    setupCounterForElement(motivationEl, "clMotivationCounter", CHAR_LIMITS.cover_letter_extra);
+  }
+
+  const highlightEl = document.getElementById("clHighlight");
+  if (highlightEl) {
+    setupCounterForElement(highlightEl, "clHighlightCounter", CHAR_LIMITS.cover_letter_extra);
+  }
+}
+
+function setupCounterForElement(element, counterId, limit) {
+  // Create counter display if it doesn't exist
+  let counterEl = document.getElementById(counterId);
+  if (!counterEl) {
+    counterEl = document.createElement('div');
+    counterEl.id = counterId;
+    counterEl.style.cssText = `
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+      text-align: right;
+    `;
+    element.parentNode.insertBefore(counterEl, element.nextSibling);
+  }
+
+  // Update counter on input
+  const updateCounter = () => {
+    const length = element.value.length;
+    const percentage = (length / limit) * 100;
+    const remaining = limit - length;
+    
+    // Set color based on usage
+    let color = '#10B981'; // Green - plenty of space
+    if (percentage > 80) {
+      color = '#F59E0B'; // Orange - warning
+    }
+    if (percentage > 95) {
+      color = '#EF4444'; // Red - critical
+    }
+
+    counterEl.style.color = color;
+    counterEl.innerHTML = `${length} / ${limit} characters`;
+
+    // Disable/enable submit if over limit
+    if (length > limit) {
+      counterEl.style.color = '#EF4444';
+      counterEl.innerHTML += ' ⚠️ LIMIT EXCEEDED';
+      // Disable appropriate button
+      if (element.id === "resumeText" || element.id === "jobDescription") {
+        const btn = document.getElementById('generateBtn');
+        if (btn) btn.disabled = true;
+      }
+    } else {
+      const btn = document.getElementById('generateBtn');
+      if (btn && element.id.startsWith('resume') || element.id === 'jobDescription') btn.disabled = false;
+    }
+  };
+
+  element.addEventListener('input', updateCounter);
+  element.addEventListener('change', updateCounter);
+  
+  // Initial call
+  updateCounter();
+}
+
+function validateCharacterLimits() {
+  const resumeText = document.getElementById("resumeText").value;
+  const jobDescription = document.getElementById("jobDescription").value;
+
+  if (resumeText.length > CHAR_LIMITS.resume_experience) {
+    alert(`Your Experience exceeds the ${CHAR_LIMITS.resume_experience} character limit.`);
+    return false;
+  }
+
+  if (jobDescription.length > CHAR_LIMITS.job_description) {
+    alert(`Job Description exceeds the ${CHAR_LIMITS.job_description} character limit.`);
+    return false;
+  }
+
+  return true;
+}
 function startGenerate() {
   const btn = document.getElementById('generateBtn');
   btn.disabled = true;
@@ -76,8 +189,15 @@ async function generateResume() {
   const jobDescription = document.getElementById("jobDescription").value.trim();
   const style = document.getElementById("styleSelect")?.value || "harvard";
 
+  // ✅ Validation: Empty inputs
   if (!resumeText || !jobDescription) {
     alert("Please provide both resume text and job description.");
+    finishGenerate();
+    return;
+  }
+
+  // ✅ Validation: Character limits
+  if (!validateCharacterLimits()) {
     finishGenerate();
     return;
   }
@@ -91,7 +211,7 @@ async function generateResume() {
   }
 
   // Credit check (frontend UX only – backend enforces too)
-  if (!currentProfile || currentProfile.credits <= 0) {
+  if (!currentProfile || currentProfile.credits < 1) {
     showCreditPopup();
     finishGenerate();
     return;
@@ -119,17 +239,19 @@ async function generateResume() {
     const data = await response.json();
 
     if (!response.ok || !data.resume_html) {
-      alert("Failed to generate resume");
+      alert("Error: " + (data.detail || "Failed to generate resume"));
       console.error(data);
       finishGenerate();
       return;
     }
 
-    // Deduct credit locally for instant UX
-    currentProfile.credits -= 1;
-    const creditEl = document.getElementById("creditCount");
-    if (creditEl) {
-      creditEl.innerText = currentProfile.credits;
+    // ✅ ATOMIC: Update credits from backend response
+    if (data.credits_left !== undefined) {
+      currentProfile.credits = data.credits_left;
+      const creditEl = document.getElementById("creditCount");
+      if (creditEl) {
+        creditEl.innerText = currentProfile.credits;
+      }
     }
 
     // Render resume
@@ -232,16 +354,22 @@ async function updateResumeWithAI() {
   
   if (!instruction) return; // Don't send empty requests
 
+  // ✅ Character limit validation
+  if (instruction.length > CHAR_LIMITS.ask_ai_adjust) {
+    alert(`Your instruction exceeds ${CHAR_LIMITS.ask_ai_adjust} characters. Please be more concise.`);
+    return;
+  }
+
   // 1. Credit Check (0.5 Credits)
   if (!currentProfile || currentProfile.credits < 0.5) {
     showCreditPopup();
     return;
   }
 
-  // 2. UI Loading State (Spin the arrow)
+  // 2. UI Loading State
   const btn = document.querySelector('.btn-refine-send');
   const originalIcon = btn.innerHTML;
-  btn.innerHTML = '<span class="material-icons-round">hourglass_empty</span>';
+  btn.innerHTML = '<span class="material-icons-round spinning">hourglass_empty</span>';
   btn.disabled = true;
   inputEl.disabled = true;
 
@@ -249,7 +377,6 @@ async function updateResumeWithAI() {
     const currentHTML = document.getElementById('output').innerHTML;
 
     // 3. Send to Backend
-    // Note: You need to create this endpoint in your Python/Node backend
     const response = await fetch("/api/refine-resume", { 
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -262,17 +389,30 @@ async function updateResumeWithAI() {
 
     const data = await response.json();
 
-    if (!response.ok || !data.updated_html) {
-      throw new Error(data.error || "Failed to update");
+    if (!response.ok) {
+      // Check if it's a credit error
+      if (response.status === 402) {
+        showCreditPopup();
+        return;
+      }
+      throw new Error(data.detail || data.error || "Failed to update");
     }
 
-    // 4. Update the Resume
-    document.getElementById('output').innerHTML = data.updated_html;
-    
-    // 5. Deduct 0.5 Credits
-  currentProfile.credits = data.credits_left;
-  document.getElementById("creditCount").innerText = data.credits_left;
+    if (!data.updated_html) {
+      throw new Error("No updated content received");
+    }
 
+    // 4. Update the Resume in DOM
+    const outputEl = document.getElementById('output');
+    outputEl.innerHTML = data.updated_html;
+    outputEl.contentEditable = true; // Keep editing enabled
+    
+    // 5. Update Credits (from atomic backend operation)
+    currentProfile.credits = data.credits_left;
+    const creditEl = document.getElementById("creditCount");
+    if (creditEl) {
+      creditEl.innerText = currentProfile.credits;
+    }
 
     // 6. Success Feedback
     inputEl.value = ''; // Clear input
@@ -283,7 +423,7 @@ async function updateResumeWithAI() {
 
   } catch (err) {
     console.error("Refine error:", err);
-    alert("Could not update resume. Please try again.");
+    alert("Error: " + err.message);
   } finally {
     // Reset UI
     btn.innerHTML = originalIcon;
@@ -320,6 +460,7 @@ function switchView(view) {
     const clEl = document.getElementById('output-cl');
     const atsContainer = document.getElementById('atsContainer');
     const mainBtn = document.getElementById('generateBtn');
+    const refineBar = document.getElementById('aiRefineBar');
 
     if (view === 'resume') {
         resumeEl.style.display = 'block';
@@ -329,6 +470,10 @@ function switchView(view) {
         // Update Main Button Text
         mainBtn.innerHTML = '<span class="material-icons-round">auto_awesome</span> Generate Resume';
         mainBtn.onclick = generateResume;
+        
+        // Show refine bar only if resume has content (not empty-state)
+        const hasResume = !resumeEl.querySelector('.empty-state');
+        refineBar.style.display = hasResume ? 'block' : 'none';
     } else {
         resumeEl.style.display = 'none';
         clEl.style.display = 'block';
@@ -337,6 +482,10 @@ function switchView(view) {
         // Update Main Button Text
         mainBtn.innerHTML = '<span class="material-icons-round">mail</span> Generate Cover Letter';
         mainBtn.onclick = openCLModal; // Below Function is defined next
+        
+        // Show refine bar only if cover letter has content (not empty-state)
+        const hasCoverLetter = !clEl.querySelector('.empty-state');
+        refineBar.style.display = hasCoverLetter ? 'block' : 'none';
     }
 }
 
@@ -356,7 +505,6 @@ function closeCLModal() {
 // --- GENERATE COVER LETTER API CALL ---
 async function submitCoverLetterGen() {
     closeCLModal();
-    startGenerate(); // Reuse existing loader
 
     const resumeText = document.getElementById("resumeText").value.trim();
     const jobDescription = document.getElementById("jobDescription").value.trim();
@@ -366,6 +514,25 @@ async function submitCoverLetterGen() {
     const manager = document.getElementById("clManager").value;
     const motivation = document.getElementById("clMotivation").value;
     const highlight = document.getElementById("clHighlight").value;
+
+    // ✅ Character limit validation for cover letter fields
+    if (motivation.length > CHAR_LIMITS.cover_letter_extra) {
+        alert(`Motivation text exceeds ${CHAR_LIMITS.cover_letter_extra} characters.`);
+        return;
+    }
+
+    if (highlight.length > CHAR_LIMITS.cover_letter_extra) {
+        alert(`Highlight text exceeds ${CHAR_LIMITS.cover_letter_extra} characters.`);
+        return;
+    }
+
+    // ✅ Credit Check with Popup
+    if (!currentProfile || currentProfile.credits < 1) {
+        showCreditPopup();
+        return;
+    }
+
+    startGenerate(); // Reuse existing loader
 
     try {
         const response = await fetch("/api/generate-cover-letter", {
@@ -384,9 +551,16 @@ async function submitCoverLetterGen() {
 
         const data = await response.json();
         
-        if (!response.ok) throw new Error(data.error);
+        if (!response.ok) {
+            // Check if it's a credit error
+            if (response.status === 402) {
+                showCreditPopup();
+                return;
+            }
+            throw new Error(data.detail || data.error);
+        }
 
-        // Deduct Credit & Update UI
+        // ✅ ATOMIC: Update Credit & Update UI from response
         currentProfile.credits = data.credits_left;
         document.getElementById("creditCount").innerText = currentProfile.credits;
 
@@ -394,12 +568,12 @@ async function submitCoverLetterGen() {
         document.getElementById("output-cl").innerHTML = data.cover_letter_html;
         document.getElementById("output-cl").contentEditable = true; // Allow manual edits
         
-        // Show Refine Bar
+        // Show Refine Bar (content was generated successfully)
         document.getElementById("aiRefineBar").style.display = "block";
 
     } catch (err) {
         console.error(err);
-        alert("Error generating cover letter");
+        alert("Error: " + err.message);
     } finally {
         finishGenerate();
     }
@@ -416,30 +590,86 @@ async function handleRefine() {
 
 async function updateCoverLetterWithAI() {
     // Implementation matches updateResumeWithAI but points to document.getElementById('output-cl')
-    // and calls /api/refine-cover-letter
-    const inputEl = document.getElementById('refineInput');
+    // and calls /api/refine-resume with type: "cover_letter"
+    const inputEl = document.querySelector('.refine-input');
     const instruction = inputEl.value.trim();
     if (!instruction) return;
 
-    // ... (Credit checks same as existing) ...
+    // ✅ Character limit validation
+    if (instruction.length > CHAR_LIMITS.ask_ai_adjust) {
+      alert(`Your instruction exceeds ${CHAR_LIMITS.ask_ai_adjust} characters. Please be more concise.`);
+      return;
+    }
+
+    // Credit check
+    if (!currentProfile || currentProfile.credits < 0.5) {
+      showCreditPopup();
+      return;
+    }
+
+    // Loading state
+    const btn = document.querySelector('.btn-refine-send');
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons-round spinning">hourglass_empty</span>';
+    btn.disabled = true;
+    inputEl.disabled = true;
 
     try {
         const currentHTML = document.getElementById('output-cl').innerHTML;
-        const res = await fetch("/api/refine-resume", { // Reuse endpoint or new one
+        const res = await fetch("/api/refine-resume", {
              method: "POST",
              headers: { "Content-Type": "application/json" },
              body: JSON.stringify({
                  email: currentUser.email,
                  html: currentHTML,
                  instruction: instruction,
-                 type: "cover_letter" // Add this flag to backend
+                 type: "cover_letter"
              })
         });
         const data = await res.json();
-        document.getElementById('output-cl').innerHTML = data.updated_html;
-        
-        // Clear input logic...
-    } catch(e) { console.error(e); }
+
+        if (!res.ok) {
+          // Check if it's a credit error
+          if (res.status === 402) {
+            showCreditPopup();
+            return;
+          }
+          throw new Error(data.detail || data.error || "Failed to update");
+        }
+
+        if (!data.updated_html) {
+          throw new Error("No updated content received");
+        }
+
+        // Update the Cover Letter in DOM
+        const outputEl = document.getElementById('output-cl');
+        outputEl.innerHTML = data.updated_html;
+        outputEl.contentEditable = true;
+
+        // Update credits
+        currentProfile.credits = data.credits_left;
+        const creditEl = document.getElementById("creditCount");
+        if (creditEl) {
+          creditEl.innerText = currentProfile.credits;
+        }
+
+        // Success feedback
+        inputEl.value = '';
+        btn.style.background = "#10B981";
+        setTimeout(() => { 
+            btn.style.background = "";
+        }, 1000);
+
+    } catch(e) { 
+      console.error(e);
+      alert("Error: " + e.message);
+    } finally {
+      // Reset UI
+      btn.innerHTML = originalIcon;
+      btn.disabled = false;
+      inputEl.disabled = false;
+      inputEl.focus();
+    }
 }
 
 
