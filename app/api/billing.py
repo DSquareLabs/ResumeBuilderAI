@@ -20,7 +20,7 @@ CREDIT_PACKS = {
         "credits": 80
     },
     "popular": {
-        "price_id": "price_1ShW3R7n4jiFDpJAqrlpbLNz",
+        "price_id": "price_1ShW3G7n4jiFDpJAx9e2gs2n",
         "credits": 250
     },
     "pro": {
