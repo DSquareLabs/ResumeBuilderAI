@@ -84,7 +84,7 @@
          <span id="creditCount">-</span> Credits Available
       </div>
 
-      <button class="btn-magic" id="generateBtn" onclick="generateResume()">
+      <button class="btn-magic" id="generateBtn" onclick="handleMainGenerate()">
         <span class="material-icons-round">auto_awesome</span>
         Generate Resume
       </button>
@@ -143,6 +143,18 @@
       <div id="output-history" style="display: none; padding: 20px;">
           </div>
 
+    </div>
+
+    <div id="aiRefineBar" class="refine-bar-container" style="display: none;">
+      <div class="refine-input-wrapper">
+        <div class="refine-cost-badge">
+          <span class="material-icons-round">bolt</span> 0.5 Credits
+        </div>
+        <input type="text" class="refine-input" placeholder="Ask AI to adjust (e.g. 'Make it more professional')...">
+        <button class="btn-refine-send" onclick="handleRefine()">
+          <span class="material-icons-round">arrow_upward</span>
+        </button>
+      </div>
     </div>
 
     </section>

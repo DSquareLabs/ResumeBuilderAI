@@ -952,13 +952,11 @@ function updateGenerateButtonText(view) {
 // 1. Update activeView state
 let activeView = 'resume'; // 'resume' | 'coverletter' | 'history'
 
-// 2. Update switchView function
 function switchView(view) {
     activeView = view;
     
     // Update Tabs UI
     document.querySelectorAll('.view-tab').forEach(btn => {
-        // Simple text check or logic to set active class
         const text = btn.innerText.toLowerCase();
         if (text.includes(view.replace('_', ' '))) {
              btn.classList.add('active');
@@ -966,10 +964,6 @@ function switchView(view) {
              btn.classList.remove('active');
         }
     });
-    document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
-    // Set current
-    event.currentTarget.classList.add('active');
-
 
     // Update Content Areas
     const resumeEl = document.getElementById('output');
@@ -984,24 +978,31 @@ function switchView(view) {
     clEl.style.display = 'none';
     historyEl.style.display = 'none';
 
+    const hasContent = (element) => element && !element.querySelector('.empty-state');
+
     if (view === 'resume') {
         resumeEl.style.display = 'block';
         if(previewActions) previewActions.style.visibility = 'visible';
-        if(refineBar) refineBar.style.display = 'block';
+        
+        // Only show Refine bar if Resume is actually generated
+        if(refineBar) {
+            refineBar.style.display = hasContent(resumeEl) ? 'block' : 'none';
+        }
     } 
     else if (view === 'coverletter') {
         clEl.style.display = 'block';
         if(previewActions) previewActions.style.visibility = 'visible';
-        if(refineBar) refineBar.style.display = 'block';
+        
+        // Only show Refine bar if Cover Letter is actually generated
+        if(refineBar) {
+            refineBar.style.display = hasContent(clEl) ? 'block' : 'none';
+        }
     }
     else if (view === 'history') {
         historyEl.style.display = 'block';
-        
-        // Hide Actions and Refine bar for History view
         if(previewActions) previewActions.style.visibility = 'hidden';
         if(refineBar) refineBar.style.display = 'none';
         
-        // Render Data
         renderHistory();
     }
     updateGenerateButtonText(view);
@@ -1085,6 +1086,15 @@ function closeCLModal() {
     document.getElementById('clModal').style.display = 'none';
 }
 
+// --- NEW MASTER GENERATE FUNCTION ---
+function handleMainGenerate() {
+  if (activeView === 'coverletter') {
+    openCLModal(); // Opens the popup for Cover Letter
+  } else {
+    generateResume(); // Default to Resume
+  }
+}
+
 // --- GENERATE COVER LETTER API CALL ---
 async function submitCoverLetterGen() {
     closeCLModal();
@@ -1160,7 +1170,6 @@ async function submitCoverLetterGen() {
 
     } catch (err) {
         console.error(err);
-        showToast(err.message, "error");
     } finally {
         finishGenerate();
     }
