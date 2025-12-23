@@ -1,15 +1,15 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
 from app.models.profile import Profile
+from app.dependencies import get_verified_email
 
 router = APIRouter()
 
 
 class ProfileRequest(BaseModel):
-    email: str
     full_name: str
     phone: str | None = None
     location: str | None = None
@@ -18,7 +18,10 @@ class ProfileRequest(BaseModel):
 
 
 @router.get("/profile")
-def get_profile(email: str):
+def get_profile(email: str = Depends(get_verified_email)):
+    """
+    Fetch user profile. Email is extracted from verified Google token.
+    """
     db: Session = SessionLocal()
 
     profile = db.query(Profile).filter(Profile.email == email).first()
@@ -40,10 +43,13 @@ def get_profile(email: str):
 
 
 @router.post("/profile")
-def save_profile(data: ProfileRequest):
+def save_profile(data: ProfileRequest, email: str = Depends(get_verified_email)):
+    """
+    Save/update user profile. Email is extracted from verified Google token.
+    """
     db: Session = SessionLocal()
 
-    profile = db.query(Profile).filter(Profile.email == data.email).first()
+    profile = db.query(Profile).filter(Profile.email == email).first()
 
     if profile:
         # update existing
@@ -55,7 +61,7 @@ def save_profile(data: ProfileRequest):
     else:
         # create new user with FREE CREDITS
         profile = Profile(
-            email=data.email,
+            email=email,
             full_name=data.full_name,
             phone=data.phone,
             location=data.location,

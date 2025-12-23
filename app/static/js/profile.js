@@ -4,7 +4,8 @@ if (!user || !user.email) {
   window.location.href = "/";
 }
 
-document.getElementById("email").value = user.email;
+// ℹ️ Email is NOT displayed in form anymore - it comes from JWT token
+// document.getElementById("email").value = user.email;
 
 // Autofill from Google (fallback only)
 function autofillFromGoogleIfEmpty() {
@@ -29,9 +30,12 @@ async function loadProfile() {
   const subtitle = document.getElementById("profileSubtitle");
 
   try {
-    const res = await fetch(
-      `/api/profile?email=${encodeURIComponent(user.email)}`
-    );
+    // 🔒 SECURE: Use JWT token, not email parameter
+    const res = await fetch("/api/profile", {
+      headers: {
+        "Authorization": `Bearer ${user.token}`
+      }
+    });
 
     if (!res.ok) {
       throw new Error("Failed to load profile");
@@ -45,6 +49,10 @@ async function loadProfile() {
       document.getElementById("location").value = profile.location || "";
       document.getElementById("linkedin").value = profile.linkedin || "";
       document.getElementById("portfolio").value = profile.portfolio || "";
+
+      // Display email preview
+      document.getElementById("email").value = user.email;
+      document.getElementById("email").readOnly = true;
 
       title.innerText = "Edit Your Profile";
       subtitle.innerText = "Update your details anytime.";
@@ -89,8 +97,8 @@ async function saveProfile() {
     return;
   }
 
+  // 🔒 SECURE: No email field, it comes from JWT token
   const payload = {
-    email: user.email,
     full_name: fullName,
     phone: document.getElementById("phone").value,
     location: document.getElementById("location").value,
@@ -101,7 +109,10 @@ async function saveProfile() {
   try {
     const res = await fetch("/api/profile", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${user.token}` // 🔒 SECURE: JWT token
+      },
       body: JSON.stringify(payload),
     });
 

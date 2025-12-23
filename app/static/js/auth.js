@@ -4,17 +4,25 @@ async function handleGoogleLogin(googleUser) {
   const user = {
     email: decoded.email,
     name: decoded.name,
-    picture: decoded.picture || null
+    picture: decoded.picture || null,
+    token: googleUser.credential // 🔒 Store JWT token for API calls
   };
 
   localStorage.setItem("user", JSON.stringify(user));
 
-  const res = await fetch(
-    `/api/profile?email=${encodeURIComponent(user.email)}`
-  );
-  const profile = await res.json();
-
-  window.location.href = profile ? "/builder" : "/profile";
+  // 🔒 SECURE: Verify with backend using JWT token, not email
+  try {
+    const res = await fetch("/api/profile", {
+      headers: {
+        "Authorization": `Bearer ${googleUser.credential}`
+      }
+    });
+    const profile = await res.json();
+    window.location.href = profile ? "/builder" : "/profile";
+  } catch (err) {
+    console.error("Failed to load profile:", err);
+    window.location.href = "/profile";
+  }
 }
 
 
@@ -93,14 +101,19 @@ async function handleGoogleLogin(response) {
         const user = {
             name: data.name,
             email: data.email,
-            picture: data.picture
+            picture: data.picture,
+            token: response.credential // 🔒 Store JWT token for API calls
         };
         
         // Save to local storage
         localStorage.setItem("user", JSON.stringify(user));
         
-        // Check for existing profile
-        const res = await fetch(`/api/profile?email=${encodeURIComponent(user.email)}`);
+        // 🔒 SECURE: Verify with backend using JWT token, not email
+        const res = await fetch("/api/profile", {
+            headers: {
+                "Authorization": `Bearer ${response.credential}`
+            }
+        });
         const profile = await res.json();
         
         // Update UI immediately without reload (optional, or just redirect)

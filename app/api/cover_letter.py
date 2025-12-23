@@ -5,6 +5,7 @@ from openai import OpenAI
 import os
 
 from app.database import get_db
+from app.dependencies import get_verified_email
 from app.services.credits import (
     has_credits, 
     deduct_credit_atomic, 
@@ -18,7 +19,6 @@ router = APIRouter(prefix="/api", tags=["cover-letter"])
 client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
 
 class CoverLetterInput(BaseModel):
-    email: str
     style: str
     resume_text: str
     job_description: str
@@ -27,7 +27,11 @@ class CoverLetterInput(BaseModel):
     highlight: str | None = ""
 
 @router.post("/generate-cover-letter")
-def generate_cl(data: CoverLetterInput, db: Session = Depends(get_db)):
+def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email), db: Session = Depends(get_db)):
+    """
+    Generate a cover letter. Email is extracted from verified Google token.
+    🔒 SECURITY: Email comes from verified JWT token, never from request body.
+    """
     
     # ✅ VALIDATION 1: Character Limits on extra fields
     if len(data.motivation or "") > CHAR_LIMIT_COVER_LETTER_EXTRA:
@@ -43,7 +47,7 @@ def generate_cl(data: CoverLetterInput, db: Session = Depends(get_db)):
         )
     
     # ✅ VALIDATION 2: Check if user has credits
-    if not has_credits(db, data.email, GENERATE_COST):
+    if not has_credits(db, email, GENERATE_COST):
         raise HTTPException(
             status_code=402, 
             detail=f"Insufficient credits. You need {GENERATE_COST} credits to generate a cover letter."
@@ -51,7 +55,7 @@ def generate_cl(data: CoverLetterInput, db: Session = Depends(get_db)):
     
     # ✅ ATOMIC OPERATION 1: Deduct credits FIRST
     try:
-        remaining_credits = deduct_credit_atomic(db, data.email, GENERATE_COST)
+        remaining_credits = deduct_credit_atomic(db, email, GENERATE_COST)
     except HTTPException as e:
         raise e
 
@@ -109,7 +113,7 @@ def generate_cl(data: CoverLetterInput, db: Session = Depends(get_db)):
     
     except Exception as e:
         # ✅ REFUND: Operation failed, return credits
-        refund_credit(db, data.email, GENERATE_COST)
+        refund_credit(db, email, GENERATE_COST)
         print(f"Cover letter generation failed, refunding {GENERATE_COST} credits. Error: {e}")
         raise HTTPException(
             status_code=500,

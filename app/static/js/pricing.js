@@ -8,14 +8,16 @@ async function selectPlan(plan) {
   }
 
   try {
+    // 🔒 SECURE: No email in body, use JWT token
     const res = await fetch("/api/billing/create-checkout-session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${user.token}` // 🔒 SECURE: JWT token
       },
       body: JSON.stringify({
-        plan: plan,          // basic | popular | pro
-        email: user.email,   // REQUIRED
+        plan: plan,  // basic | popular | pro
+        // ✅ NO email field - it comes from JWT token
       }),
     });
 

@@ -6,6 +6,7 @@ from fastapi import Request
 from pydantic import BaseModel
 
 from app.database import get_db
+from app.dependencies import get_verified_email
 from app.models.profile import Profile
 
 # Stripe setup
@@ -31,16 +32,19 @@ CREDIT_PACKS = {
 
 class CheckoutRequest(BaseModel):
     plan: str
-    email: str
 
 
 @router.post("/create-checkout-session")
 def create_checkout_session(
     data: CheckoutRequest,
+    email: str = Depends(get_verified_email),
     db: Session = Depends(get_db)
 ):
+    """
+    Create Stripe checkout session. Email is extracted from verified Google token.
+    🔒 SECURITY: Email comes from verified JWT token, never from request body.
+    """
     plan = data.plan
-    email = data.email
 
     if plan not in CREDIT_PACKS:
         raise HTTPException(status_code=400, detail="Invalid plan")

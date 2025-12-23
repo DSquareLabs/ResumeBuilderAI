@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -11,6 +11,7 @@ from app.api.billing import router as billing_router
 
 from app.database import engine, Base
 from app.models.profile import Profile
+from app.dependencies import get_verified_email
 
 Base.metadata.create_all(bind=engine)
 
@@ -53,14 +54,18 @@ class ResumeInput(BaseModel):
 
     # User profile data
     full_name: str
-    email: str
+    email: str | None = ""
     phone: str | None = ""
     location: str | None = ""
     linkedin: str | None = ""
     portfolio: str | None = ""
     
 @app.post("/api/generate-resume")
-def generate_resume(data: ResumeInput):
+def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email)):
+    """
+    Generate an optimized resume. Email is extracted from verified Google token.
+    🔒 SECURITY: Email comes from verified JWT token, never from request body.
+    """
     
     db = next(get_db())
     
@@ -78,7 +83,7 @@ def generate_resume(data: ResumeInput):
         )
     
     # ✅ VALIDATION 2: Check credits exist
-    if not has_credits(db, data.email, GENERATE_COST):
+    if not has_credits(db, email, GENERATE_COST):
         raise HTTPException(
             status_code=402, 
             detail=f"Insufficient credits. You need {GENERATE_COST} credits to generate a resume."
@@ -86,7 +91,7 @@ def generate_resume(data: ResumeInput):
     
     # ✅ ATOMIC OPERATION 1: Deduct credits FIRST (cut first)
     try:
-        remaining_credits = deduct_credit_atomic(db, data.email, GENERATE_COST)
+        remaining_credits = deduct_credit_atomic(db, email, GENERATE_COST)
     except HTTPException as e:
         raise e
     
@@ -184,12 +189,6 @@ Output format:
         profile_lines.append(f"Portfolio: {data.portfolio}")
     profile_info = "\n".join(profile_lines)
 
-    # Debug: Print what we're sending
-    print("DEBUG: Style:", data.style)
-    print("DEBUG: Profile Info:", repr(profile_info))
-    print("DEBUG: Full Name:", repr(data.full_name))
-    print("DEBUG: Email:", repr(data.email))
-
     user_prompt = f"""
 Create a high-scoring, ATS-optimized resume based on the following:
 
@@ -223,14 +222,8 @@ INSTRUCTIONS:
 - Ensure the resume highlights the candidate's potential and growth mindset
 """
 
-    # Debug: Print what we're sending to AI
-    print("DEBUG: Selected Style:", data.style)
-    print("DEBUG: Profile Info:", profile_info)
-    print("DEBUG: Resume Text Length:", len(data.resume_text))
-    print("DEBUG: Job Description Length:", len(data.job_description))
-
     response = client.chat.completions.create(
-        model="gpt-5.1",
+        model="gpt-4",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -258,17 +251,11 @@ INSTRUCTIONS:
           
     except Exception as e:
         # ✅ REFUND: Operation failed, return credits
-        refund_credit(db, data.email, GENERATE_COST)
-        print(f"Resume generation failed, refunding {GENERATE_COST} credits. Error: {e}")
+        refund_credit(db, email, GENERATE_COST)
         raise HTTPException(
             status_code=500,
             detail="AI generation failed. Credits have been refunded."
         )
-
-    # Debug: Print generated content
-    print("DEBUG: Generated resume_html (first 500 chars):")
-    print(resume_html[:500])
-    print("DEBUG: ATS Score:", ats_score)
 
     return {
         "resume_html": resume_html,

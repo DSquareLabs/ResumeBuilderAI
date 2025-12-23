@@ -4,6 +4,7 @@ from openai import OpenAI
 import os
 
 from app.database import get_db
+from app.dependencies import get_verified_email
 from app.services.credits import (
     deduct_credit_atomic, 
     refund_credit, 
@@ -21,11 +22,14 @@ client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
 class RefineRequest(BaseModel):
     html: str
     instruction: str
-    email: str
     type: str = "resume" 
 
 @router.post("/refine-resume")
-def refine_resume(data: RefineRequest, db: Session = Depends(get_db)):
+def refine_resume(data: RefineRequest, email: str = Depends(get_verified_email), db: Session = Depends(get_db)):
+    """
+    Refine a resume/cover letter. Email is extracted from verified Google token.
+    🔒 SECURITY: Email comes from verified JWT token, never from request body.
+    """
     # ✅ VALIDATION 1: Character Limit on instruction
     if len(data.instruction) > CHAR_LIMIT_ASK_AI_ADJUST:
         raise HTTPException(
@@ -34,7 +38,7 @@ def refine_resume(data: RefineRequest, db: Session = Depends(get_db)):
         )
     
     # ✅ VALIDATION 2: Check if user has credits
-    if not has_credits(db, data.email, REFINE_COST):
+    if not has_credits(db, email, REFINE_COST):
         raise HTTPException(
             status_code=402, 
             detail=f"Insufficient credits. You need {REFINE_COST} credits to refine."
@@ -42,7 +46,7 @@ def refine_resume(data: RefineRequest, db: Session = Depends(get_db)):
 
     # ✅ ATOMIC OPERATION 1: Deduct credits FIRST
     try:
-        remaining_credits = deduct_credit_atomic(db, data.email, REFINE_COST)
+        remaining_credits = deduct_credit_atomic(db, email, REFINE_COST)
     except HTTPException as e:
         raise e
 
@@ -95,7 +99,7 @@ def refine_resume(data: RefineRequest, db: Session = Depends(get_db)):
 
     except Exception as e:
         # ✅ REFUND: Operation failed, return credits
-        refund_credit(db, data.email, REFINE_COST)
+        refund_credit(db, email, REFINE_COST)
         print(f"Refine failed, refunding {REFINE_COST} credits. Error: {e}")
         raise HTTPException(
             status_code=500, 

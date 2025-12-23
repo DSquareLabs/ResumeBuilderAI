@@ -32,16 +32,19 @@ async function loadUserProfile() {
 
   currentUser = JSON.parse(storedUser);
 
-  if (!currentUser.email) {
-    console.error("User email missing");
+  if (!currentUser.email || !currentUser.token) {
+    console.error("User email or token missing");
     window.location.href = "/";
     return;
   }
 
   try {
-    const res = await fetch(
-      `/api/profile?email=${encodeURIComponent(currentUser.email)}`
-    );
+    // 🔒 SECURE: Use JWT token, not email parameter
+    const res = await fetch("/api/profile", {
+      headers: {
+        "Authorization": `Bearer ${currentUser.token}`
+      }
+    });
 
     if (!res.ok) {
       console.error("Failed to load profile");
@@ -493,7 +496,7 @@ async function generateResume() {
   }
 
   // Auth check
-  if (!currentUser || !currentUser.email) {
+  if (!currentUser || !currentUser.email || !currentUser.token) {
     showToast("Session expired. Please login again.", "error");
     window.location.href = "/";
     finishGenerate();
@@ -508,17 +511,20 @@ async function generateResume() {
   }
 
   try {
+    // 🔒 SECURE: No email in body, use JWT token
     const response = await fetch("/api/generate-resume", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${currentUser.token}` // 🔒 SECURE: JWT token
+      },
       body: JSON.stringify({
         style: style,
         resume_text: resumeText,
         job_description: jobDescription,
 
-        // profile data
+        // profile data (NO email field - it comes from JWT token)
         full_name: currentProfile.full_name || currentUser.name || "",
-        email: currentUser.email,
         phone: currentProfile.phone || "",
         location: currentProfile.location || "",
         linkedin: currentProfile.linkedin || "",
@@ -799,13 +805,17 @@ async function updateResumeWithAI() {
     const currentHTML = document.getElementById('output').innerHTML;
 
     // 3. Send to Backend
+    // 🔒 SECURE: No email in body, use JWT token
     const response = await fetch("/api/refine-resume", { 
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${currentUser.token}` // 🔒 SECURE: JWT token
+      },
       body: JSON.stringify({
         html: currentHTML,
-        instruction: instruction,
-        email: currentUser.email
+        instruction: instruction
+        // ✅ NO email field - it comes from JWT token
       })
     });
 
@@ -960,17 +970,21 @@ async function submitCoverLetterGen() {
     startGenerate('cover-letter'); // Pass document type for context-aware loading message
 
     try {
+        // 🔒 SECURE: No email in body, use JWT token
         const response = await fetch("/api/generate-cover-letter", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${currentUser.token}` // 🔒 SECURE: JWT token
+            },
             body: JSON.stringify({
-                email: currentUser.email,
                 style: "professional, concise, one-page format", // Fixed style for CL
                 resume_text: resumeText,
                 job_description: jobDescription,
                 hiring_manager: manager,
                 motivation: motivation,
                 highlight: highlight
+                // ✅ NO email field - it comes from JWT token
             })
         });
 
@@ -1045,14 +1059,18 @@ async function updateCoverLetterWithAI() {
 
     try {
         const currentHTML = document.getElementById('output-cl').innerHTML;
+        // 🔒 SECURE: No email in body, use JWT token
         const res = await fetch("/api/refine-resume", {
              method: "POST",
-             headers: { "Content-Type": "application/json" },
+             headers: { 
+                 "Content-Type": "application/json",
+                 "Authorization": `Bearer ${currentUser.token}` // 🔒 SECURE: JWT token
+             },
              body: JSON.stringify({
-                 email: currentUser.email,
                  html: currentHTML,
                  instruction: instruction,
                  type: "cover_letter"
+                 // ✅ NO email field - it comes from JWT token
              })
         });
         const data = await res.json();

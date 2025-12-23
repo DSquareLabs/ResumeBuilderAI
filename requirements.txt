@@ -3,6 +3,8 @@ uvicorn
 python-dotenv
 openai
 google-auth
+google-auth-httplib2
+google-auth-oauthlib
 sqlalchemy
 psycopg2-binary
 stripe
