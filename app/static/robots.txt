@@ -1,5 +1,8 @@
 User-agent: *
 Allow: /
-Disallow: /result/
+Allow: /pricing
+Disallow: /builder
+Disallow: /profile
 Disallow: /api/
-Sitemap: https://myresumematch.com//sitemap.xml
+
+Sitemap: https://myresumematch.com/sitemap.xml

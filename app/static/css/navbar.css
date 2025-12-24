@@ -168,3 +168,55 @@
     transform: rotate(-45deg) translate(5px, -6px);
   }
 }
+
+
+/* --- ICONIC LOGO STYLES (Add to bottom of navbar.css) --- */
+
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* Space between Resume and AI */
+  text-decoration: none;
+  cursor: pointer;
+  /* Prevent text selection so it feels like an image */
+  user-select: none; 
+  -webkit-user-select: none; 
+}
+
+/* 2. "Resume" Text: Dark, professional, tight */
+.logo-text {
+  font-family: 'Inter', sans-serif; /* Ensure you use your premium font */
+  font-weight: 700;   /* Bold but not heavy */
+  font-size: 1.35rem; /* Large enough to read */
+  color: #1e293b;     /* Dark Slate (Not pure black, looks more premium) */
+  letter-spacing: -0.03em; /* Tighten letters slightly for a modern look */
+}
+
+/* 3. "AI" Badge: The "Icon" part */
+.logo-badge {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;   /* Extra bold */
+  font-size: 1rem;    /* Slightly smaller than text */
+  
+  background-color: #0a66c2; /* LinkedIn Blue */
+  color: #ffffff;
+  
+  padding: 4px 8px;   /* Size of the box */
+  border-radius: 6px; /* Soft square edges */
+  
+  /* Subtle shadow to make it pop */
+  box-shadow: 0 2px 5px rgba(10, 102, 194, 0.2);
+  
+  /* Fix alignment visually */
+  transform: translateY(1px); 
+  display: inline-block;
+}
+
+/* 4. Hover Effect (Subtle Lift) */
+.logo-container:hover .logo-badge {
+  background-color: #004182; /* Darker blue on hover */
+  box-shadow: 0 4px 8px rgba(10, 102, 194, 0.3);
+  transform: translateY(0px); /* Moves up slightly */
+  transition: all 0.2s ease;
+}
