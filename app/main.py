@@ -89,173 +89,120 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email))
             detail=f"Insufficient credits. You need {GENERATE_COST} credits to generate a resume."
         )
     
-    # ✅ ATOMIC OPERATION 1: Deduct credits FIRST (cut first)
+    # ✅ ATOMIC OPERATION 1: Deduct credits FIRST
     try:
         remaining_credits = deduct_credit_atomic(db, email, GENERATE_COST)
     except HTTPException as e:
         raise e
     
+    # --- 🧠 SUPERIOR PROMPT ENGINEERING ---
     system_prompt = """
-You are an Expert Senior Resume Writer, ATS (Applicant Tracking System) Algorithm Specialist, and Creative Web Developer.
+    You are a Senior CSS Architect and Elite Career Strategist.
+    Your task is to take raw resume data and a job description, and transform it into a visually stunning, ATS-optimized HTML resume.
 
-Your goal is to create a high-scoring, ATS-optimized resume in HTML/CSS format that perfectly matches the requested visual style, based on the provided user details and job description, and then provide insightful gap analysis and improvement suggestions.
+    🚨 CORE DIRECTIVE: VISUAL STYLE IS PARAMOUNT.
+    You must strictly adhere to the requested "Visual Style" defined below. The CSS you generate must be distinct, professional, and pixel-perfect.
 
-CONTENT OPTIMIZATION & REWRITING:
-- Analyze the candidate's current experience against the Target Job Description
-- Rewrite resume content to maximize ATS Match Rate by integrating hard and soft keywords naturally
-- Focus on transferable skills if experience doesn't match perfectly - reframe existing experience to fit new contexts
-- Use "Action Verb + Task + Result" format (Google XYZ formula) for quantifiable results
-- Do not fabricate experience - only enhance and optimize what's provided
-- If user has no relevant experience, suggest building portfolio projects, certifications, or volunteer work
-- Be creative with layout and design while maintaining professionalism
+    ---
+    🎨 STYLE DEFINITIONS (STRICTLY FOLLOW THE CSS RULES FOR THE SELECTED STYLE):
 
-HTML/CSS GENERATION REQUIREMENTS:
-- Generate ONLY the resume content HTML with embedded CSS (not a full HTML document)
-- Start directly with the resume content (name, contact, sections, etc.)
-- Include all CSS in <style> tags within the HTML
-- PERFECTLY implement the specified visual style - be creative and detailed in your interpretation
-- Include @media print CSS for perfect A4/Letter printing
-- Use semantic HTML structure for ATS parsing
-- Use clean, professional fonts appropriate to the style
-- NO <html>, <head>, or <body> tags - just the resume content
-- NO code blocks, NO backticks, NO markdown formatting in the output
+    1. "Harvard" (The Classic / Academic)
+       - Use the Famous Harvard CSS Style as reference
 
-VISUAL STYLE IMPLEMENTATION:
+    2. "Tech" (The Modern / Startup)
+       - LAYOUT: Clean single column or subtle grid.
+       - TYPOGRAPHY: Modern Sans-Serif (Inter, Roboto, Helvetica, System UI).
+       - DESIGN ELEMENTS: Use "Pills" or "Tags" for Skills (e.g., background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px;).
+       - COLORS: Dark grey text (#1f2937) with subtle Blue/Indigo accents (#4f46e5) for headers or links.
+       - VIBE: Silicon Valley, Software Engineer, Product Manager.
 
-For "Harvard" style:
-- Traditional, academic layout with left-aligned text
-- Name in large, bold serif font at top center
-- Contact info below name, right-aligned
-- Section headers in ALL CAPS, bold, with underlines or borders
-- Bullet points with consistent indentation
-- Professional black text, minimal color accents
-- Classic typography with serif headers and sans-serif body
+    3. "Creative" (The Designer / Two-Column)
+       - LAYOUT: STRICT Two-Column Layout (CSS Grid or Flexbox).
+         - Left/Right Sidebar (30% width) for Skills, Contact, Education.
+         - Main Content (70% width) for Experience and Summary.
+       - COLORS: Use a soft background color for the sidebar (e.g., #f3f4f6 or #1e293b with white text).
+       - TYPOGRAPHY: Bold, distinct headers. Sans-serif.
+       - VIBE: UI/UX Designer, Marketing, Creative Director.
 
-For "Tech Focus" style:
-- Modern tech-inspired design with subtle tech colors
-- Name with modern font, possibly with accent color
-- Clean layout with tech-appropriate sections
-- Subtle use of blue/green accent colors
-- Professional yet approachable design
-- Include relevant tech certifications prominently
+    ---
+    ✍️ CONTENT OPTIMIZATION RULES:
+    1. **ATS Optimization:** Rewrite the candidate's bullet points to match the Job Description keywords but Do Not Fake ANY DATA if USER HAS NOT PROVIDED ENOUGH INFORMATION WRITE IN SQUARE BRACKETS
+    with saying in bold Its Best to Write Here or You Can Drop the Relevant Section whatever seems Best.
+    2. **Impact First:** Use the "Action Verb + Task + Result" formula. (e.g., "Reduced latency by 40%..." instead of "Worked on optimization") Do Not Try to Fake the DATA Too much and be realistic according to candidate.
+    3. **No Fluff:** Remove generic phrases like "Hard worker". Replace with hard skills.
+    4. **Gap Filling:** If the user lacks a specific skill mentioned in the JD, highlight a *transferable* skill or a relevant project that demonstrates capacity to learn it. DO NOT LIE.
 
-For "Two Column" style:
-- Two-column layout using CSS Grid or Flexbox
-- Left column: Contact info, skills, education
-- Right column: Professional summary, work experience
-- Modern typography with clear section separation
-- Balanced white space distribution
+    ---
+    💻 TECHNICAL OUTPUT RULES:
+    1. **Output ONLY HTML.** No markdown blocks, no ```html``` wrapper, no explanations.
+    2. **Embedded CSS:** All CSS must be inside <style> tags within the HTML.
+    3. **Responsiveness:** Ensure it looks good on mobile but prioritizes A4 Print formatting (@media print).
+    4. **Structure:** Use semantic tags (<header>, <section>, <ul>, <li>).
+    5. **Do Not add Page Borders or shadows in the css design**
 
-For "Fancy" style:
-- Elegant design with tasteful styling
-- Decorative elements like subtle borders or icons
-- Professional color scheme with accent colors
-- Elegant typography (serif for headers, sans-serif for body)
-- Creative layout while maintaining readability
+    Format your response EXACTLY like this:
+    ===RESUME_HTML===
+    [Your HTML code here]
+    ===ATS_SCORE===
+    [Number 0-100]
+    """
 
-STYLE CREATIVITY GUIDELINES:
-- Each style should have distinct visual characteristics
-- Use appropriate fonts, colors, spacing, and layout for the chosen style
-- Be creative within professional bounds - don't be afraid to experiment with layout
-- Ensure the design is ATS-friendly (semantic HTML, readable fonts)
-- Make the resume visually appealing while prioritizing content optimization
-
-ATS SCORING:
-- Provide honest ATS score (0-100) based on keyword matching, formatting, and JD relevance
-
-CRITICAL: Your output must be ONLY the content between the markers. No explanations, no code blocks, no markdown.
-
-Output format:
-===RESUME_HTML===
-[Resume content HTML with embedded CSS - NO full HTML document structure]
-
-===ATS_SCORE===
-[number 0-100]
-"""
-
-    # Build candidate profile string, omitting empty fields
+    # Build candidate profile string
     profile_lines = []
-    if data.full_name:
-        profile_lines.append(f"Full Name: {data.full_name}")
-    if data.email:
-        profile_lines.append(f"Email: {data.email}")
-    if data.phone:
-        profile_lines.append(f"Phone: {data.phone}")
-    if data.location:
-        profile_lines.append(f"Location: {data.location}")
-    if data.linkedin:
-        profile_lines.append(f"LinkedIn: {data.linkedin}")
-    if data.portfolio:
-        profile_lines.append(f"Portfolio: {data.portfolio}")
+    if data.full_name: profile_lines.append(f"Name: {data.full_name}")
+    if data.email: profile_lines.append(f"Email: {data.email}")
+    if data.phone: profile_lines.append(f"Phone: {data.phone}")
+    if data.location: profile_lines.append(f"Location: {data.location}")
+    if data.linkedin: profile_lines.append(f"LinkedIn: {data.linkedin}")
+    if data.portfolio: profile_lines.append(f"Portfolio: {data.portfolio}")
     profile_info = "\n".join(profile_lines)
 
     user_prompt = f"""
-Create a high-scoring, ATS-optimized resume based on the following:
-
-VISUAL STYLE: {data.style}
-
-CANDIDATE PROFILE INFORMATION (MANDATORY - USE THIS IN RESUME HEADER):
-{profile_info}
-
-CURRENT RESUME CONTENT:
-{data.resume_text}
-
-TARGET JOB DESCRIPTION:
-{data.job_description}
-
-CRITICAL REQUIREMENTS:
-- STYLE IMPLEMENTATION: You MUST implement the "{data.style}" visual style exactly as specified in the system prompt
-- PROFILE USAGE: If candidate profile information is provided above, you MUST include it in the resume header/contact section
-- If no profile information is provided, create a generic professional header with placeholder information
-- The profile information is provided for context but is not mandatory - use it if available
-
-INSTRUCTIONS:
-- Analyze experience against the JD and optimize for maximum ATS matching
-- Integrate relevant keywords naturally and strategically throughout the resume
-- Focus on transferable skills and quantifiable achievements using action verbs
-- If the candidate has limited or no relevant experience, suggest and include:
-  * Personal projects that demonstrate relevant skills
-  * Online courses, certifications, or bootcamps
-  * Volunteer work, internships, or freelance projects
-  * Transferable skills from other life experiences
-- Be creative with the layout while maintaining ATS compatibility
-- Ensure the resume highlights the candidate's potential and growth mindset
-"""
-
-    response = client.chat.completions.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        max_completion_tokens=5000,
-    )
-
-    content = response.choices[0].message.content
+    GENERATE THIS RESUME:
+    
+    🔹 SELECTED STYLE: {data.style} (Apply the {data.style} CSS rules strictly!)
+    
+    🔹 CANDIDATE INFO:
+    {profile_info}
+    
+    🔹 RAW EXPERIENCE (REWRITE THIS):
+    {data.resume_text}
+    
+    🔹 TARGET JOB DESCRIPTION (OPTIMIZE FOR THIS):
+    {data.job_description}
+    """
 
     try:
-        # ✅ ATOMIC OPERATION 2: Parse response successfully before we committed credits
-        # Clean the content first - remove any code blocks
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Using the smartest model for design + logic
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7, # Slightly creative to allow for better phrasing
+        )
+
+        content = response.choices[0].message.content
+
+        # Clean logic
         content = content.replace('```html', '').replace('```', '').strip()
         
-        resume_html = content.split("===RESUME_HTML===")[1].split("===ATS_SCORE===")[0].strip()
-        ats_score = content.split("===ATS_SCORE===")[1].strip()
+        if "===RESUME_HTML===" in content:
+            parts = content.split("===ATS_SCORE===")
+            resume_html = parts[0].replace("===RESUME_HTML===", "").strip()
+            ats_score = parts[1].strip() if len(parts) > 1 else "85"
+        else:
+            # Fallback if AI forgets format
+            resume_html = content
+            ats_score = "80"
           
-        # Clean up any remaining markdown or code formatting
-        resume_html = resume_html.replace('```', '').strip()
-        ats_score = ats_score.replace('```', '').strip()
-        
-        # Validate we got valid output
-        if not resume_html or not ats_score:
-            raise ValueError("Empty HTML or ATS score from AI")
+        if not resume_html:
+            raise ValueError("Empty HTML from AI")
           
     except Exception as e:
-        # ✅ REFUND: Operation failed, return credits
         refund_credit(db, email, GENERATE_COST)
-        raise HTTPException(
-            status_code=500,
-            detail="AI generation failed. Credits have been refunded."
-        )
+        print(f"Generation Error: {e}")
+        raise HTTPException(status_code=500, detail="AI generation failed. Credits refunded.")
 
     return {
         "resume_html": resume_html,

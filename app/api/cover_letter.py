@@ -19,103 +19,115 @@ router = APIRouter(prefix="/api", tags=["cover-letter"])
 client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
 
 class CoverLetterInput(BaseModel):
-    style: str
+    style: str 
     resume_text: str
     job_description: str
     hiring_manager: str | None = "Hiring Manager"
-    motivation: str | None = ""
-    highlight: str | None = ""
+    motivation: str | None = "" # "Why this company?"
+    highlight: str | None = ""  # "Special Story/Experience"
 
 @router.post("/generate-cover-letter")
 def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email), db: Session = Depends(get_db)):
     """
-    Generate a cover letter. Email is extracted from verified Google token.
-    🔒 SECURITY: Email comes from verified JWT token, never from request body.
+    Generate a narrative-focused cover letter.
+    🔒 SECURITY: Email comes from verified JWT token.
     """
     
-    # ✅ VALIDATION 1: Character Limits on extra fields
+    # ✅ VALIDATION 1: Character Limits
     if len(data.motivation or "") > CHAR_LIMIT_COVER_LETTER_EXTRA:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Motivation text exceeds {CHAR_LIMIT_COVER_LETTER_EXTRA} characters."
-        )
+        raise HTTPException(status_code=400, detail="Motivation text is too long.")
     
     if len(data.highlight or "") > CHAR_LIMIT_COVER_LETTER_EXTRA:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Highlight text exceeds {CHAR_LIMIT_COVER_LETTER_EXTRA} characters."
-        )
+        raise HTTPException(status_code=400, detail="Highlight story is too long.")
     
-    # ✅ VALIDATION 2: Check if user has credits
+    # ✅ VALIDATION 2: Credits
     if not has_credits(db, email, GENERATE_COST):
         raise HTTPException(
             status_code=402, 
-            detail=f"Insufficient credits. You need {GENERATE_COST} credits to generate a cover letter."
+            detail=f"Insufficient credits. You need {GENERATE_COST} credits."
         )
     
-    # ✅ ATOMIC OPERATION 1: Deduct credits FIRST
+    # ✅ ATOMIC OPERATION 1: Deduct credits
     try:
         remaining_credits = deduct_credit_atomic(db, email, GENERATE_COST)
     except HTTPException as e:
         raise e
 
-    system_prompt = f"""
-    You are an expert Career Coach and Professional Writer. 
-    You are generating a Cover Letter in HTML/CSS format.
-    
-    DESIGN RULES:
-    - Return ONLY the HTML content inside a container (no <head>, <body>).
+    # --- 🧠 STORYTELLER PROMPT ---
+    system_prompt = """
+    You are an Expert Ghostwriter for Executive Careers.
+    Your goal is to write a compelling, narrative-driven Cover Letter.
+
+    ❌ WHAT NOT TO DO:
+    - DO NOT create fancy layouts, colors, or columns. 
+    - DO NOT use bullet points. A cover letter is a story, not a list.
+    - DO NOT say "I have X skills." Show, don't tell.
+
+    ✅ DESIGN RULES (SIMPLE & CLEAN):
+    - Generate ONLY the HTML content (no <head>, <body>).
     - Embed CSS in <style> tags.
-    - MATCH THE VISUAL STYLE: "{data.style}". 
-      (If Harvard: clean, serif, minimal. If Tech: modern, sans-serif, accent colors. If Creative: bold headers).
-    - Ensure it fits perfectly on one A4 page (@media print).
+    - STYLE: Professional Business Letter.
+      - Size: 11pt or 12pt.
+      - Color: #000000 (Pure Black).
+      - Layout: Standard 1-inch margins, left-aligned text, clear paragraph spacing.
+      - NO background colors. NO creative elements. Just text on paper.
+
+    ✅ CONTENT RULES (THE STORY):
+    1. **Salutation:** Use the provided Hiring Manager name.
+    2. **The Hook (Paragraph 1):** Why them? Use the user's 'Motivation' input to create a genuine connection to the company.
+    3. **The 'Special Experience' (Paragraph 2):** This is the core. Use the user's 'Highlight' input. 
+       - If they provided a specific story, polish it and connect it to the Job Description's biggest problem.
+       - If they didn't, find the strongest match in their Resume and tell it as a short success story.
+    4. **The Closing:** Confident, professional, and requesting a specific next step.
     
-    CONTENT RULES:
-    - Tone: Professional, confident, enthusiastic.
-    - Structure:
-      1. Header (Same style as resume would be)
-      2. Salutation (Dear {data.hiring_manager},)
-      3. The Hook: Why this company? (Integrate user's motivation: "{data.motivation}")
-      4. The Pitch: Connect user's resume skills to the Job Description.
-      5. The Proof: Specific achievement (Integrate: "{data.highlight}")
-      6. Call to Action & Sign-off.
+    Output format: Just the HTML string starting with <style>...
     """
 
     user_prompt = f"""
-    Job Description: {data.job_description}
-    Candidate Resume Data: {data.resume_text}
+    TARGET JOB DESCRIPTION: 
+    {data.job_description}
     
-    Candidate's specific motivation: {data.motivation}
-    Candidate's specific highlight: {data.highlight}
+    CANDIDATE RESUME: 
+    {data.resume_text}
+    
+    ---
+    USER INPUTS (USE THESE TO DRIVE THE NARRATIVE):
+    
+    1. Hiring Manager: {data.hiring_manager}
+    
+    2. THE HOOK (Why this company?): 
+    "{data.motivation}"
+    (If empty, find a compelling reason in the JD to be excited about).
+    
+    3. THE SPECIAL STORY (The Highlight): 
+    "{data.highlight}"
+    (This is the most important part. Weave this story into the letter to prove competency).
     """
 
     try:
         response = client.chat.completions.create(
-            model="gpt-5.1", 
+            model="gpt-4o",  # Use smart model for better writing flow
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
-            ]
+            ],
+            temperature=0.7, # Slightly creative for better storytelling
         )
 
         content = response.choices[0].message.content
         cl_html = content.replace('```html', '').replace('```', '').strip()
         
-        # ✅ VALIDATION 3: Validate we got content back
         if not cl_html:
-            raise ValueError("Empty cover letter HTML from AI")
+            raise ValueError("Empty response from AI")
         
-        # ✅ SUCCESS! Credits already deducted (atomic)
         return {
             "cover_letter_html": cl_html,
             "credits_left": remaining_credits
         }
     
     except Exception as e:
-        # ✅ REFUND: Operation failed, return credits
         refund_credit(db, email, GENERATE_COST)
-        print(f"Cover letter generation failed, refunding {GENERATE_COST} credits. Error: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Cover letter generation failed. Credits have been refunded."
+            detail="Generation failed. Credits refunded."
         )
