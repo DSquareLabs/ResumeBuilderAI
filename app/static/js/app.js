@@ -23,8 +23,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs
 async function loadUserProfile() {
   const storedUser = localStorage.getItem("user");
 
+  // 1. No user stored? Redirect unless on public pricing page
   if (!storedUser) {
-    if (window.location.pathname !== "/pricing") {
+    if (window.location.pathname !== "/pricing" && window.location.pathname !== "/") {
       window.location.href = "/";
     }
     return;
@@ -32,19 +33,27 @@ async function loadUserProfile() {
 
   currentUser = JSON.parse(storedUser);
 
+  // 2. Bad data? Clean up and kick out.
   if (!currentUser.email || !currentUser.token) {
     console.error("User email or token missing");
-    window.location.href = "/";
+    logout(); // Auto-clean
     return;
   }
 
   try {
-    // 🔒 SECURE: Use JWT token, not email parameter
     const res = await fetch("/api/profile", {
       headers: {
         "Authorization": `Bearer ${currentUser.token}`
       }
     });
+
+    // 🚨 3. THE FIX: Handle Expired Tokens (401)
+    if (res.status === 401) {
+       console.warn("Token expired. Logging out.");
+       showToast("Session expired. Please sign in again.", "error");
+       setTimeout(() => logout(), 1500); // Give them a second to see why
+       return;
+    }
 
     if (!res.ok) {
       console.error("Failed to load profile");
@@ -1353,58 +1362,3 @@ function printActiveDocument() {
     printWindow.close();
   }, 500);
 }
-
-
-// --- TOAST NOTIFICATION SYSTEM ---
-function showToast(message, type = 'info') {
-  let container = document.getElementById('toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    document.body.appendChild(container);
-  }
-
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  
-  let icon = 'info';
-  if (type === 'success') icon = 'check_circle';
-  if (type === 'error') icon = 'error_outline';
-
-  toast.innerHTML = `
-    <span class="material-icons-round">${icon}</span>
-    <span>${message}</span>
-  `;
-
-  container.appendChild(toast);
-
-  // Trigger animation
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-  });
-
-  // Remove after 3 seconds
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
-  }, 4000);
-}
-
-// Replace standard alerts with this globally accessible function
-window.showToast = showToast;
-
-
-document.addEventListener("DOMContentLoaded", () => {
-   loadUserProfile();
-   setupCharacterCounters();
-
-   setupMobileAccordions();
-   
-   updateGenerateButtonText(activeView);
-});
-
-
-window.addEventListener('resize', () => {
-    updateGenerateButtonText(activeView);
-    setupMobileAccordions(); // Re-check in case layout changed
-});
