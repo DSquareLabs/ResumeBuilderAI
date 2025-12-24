@@ -60,6 +60,9 @@ async function loadProfile() {
       document.getElementById("email").value = user.email;
       document.getElementById("email").readOnly = true;
 
+      const dangerZone = document.getElementById("dangerZone");
+      if (dangerZone) dangerZone.style.display = "block";
+
       title.innerText = "Edit Your Profile";
       subtitle.innerText = "Update your details anytime.";
 
@@ -100,6 +103,9 @@ async function loadProfile() {
     }
     else {
       // New user - no profile yet
+      const dangerZone = document.getElementById("dangerZone");
+      if (dangerZone) dangerZone.style.display = "none";
+
       title.innerText = "Complete Your Profile";
       subtitle.innerText = "We'll use these details to build your resume.";
       autofillFromGoogleIfEmpty();
@@ -110,6 +116,9 @@ async function loadProfile() {
     console.error("Error loading profile:", err);
     
     // New user scenario - show profile completion form
+    const dangerZone = document.getElementById("dangerZone");
+    if (dangerZone) dangerZone.style.display = "none";
+
     title.innerText = "Complete Your Profile";
     subtitle.innerText = "We'll use these details to build your resume.";
     autofillFromGoogleIfEmpty();
@@ -202,4 +211,71 @@ function switchProfileTab(tabName) {
         tabs[0].classList.add("active");
         tabs[1].classList.remove("active");
     }
+}
+
+
+async function handleDeleteAccount() {
+  // 🔒 CHECK 1: The "Are you sure?"
+  const firstCheck = await showConfirmDialog(
+    "⚠️ Delete Account?",
+    "You are about to delete your account. This action is PERMANENT and cannot be undone.",
+    "Delete",
+    "Cancel",
+    true
+  );
+
+  if (!firstCheck) return;
+
+  // 🔒 CHECK 2: The "Money/Credits" Warning
+  const creditEl = document.getElementById("profileCreditCount");
+  const credits = creditEl ? creditEl.innerText : "any";
+
+  const secondCheck = await showConfirmDialog(
+    "🛑 CRITICAL WARNING",
+    `You currently have ${credits} credits.\n\nDeleting your account will PERMANENTLY ERASE these credits.\nThere are NO REFUNDS for deleted accounts.\n\nDo you really want to proceed?`,
+    "Delete Everything",
+    "Keep Account",
+    true
+  );
+
+  if (!secondCheck) return;
+
+  // 🚀 EXECUTE DELETION
+  try {
+    const btn = document.querySelector("button[onclick='handleDeleteAccount()']");
+    if(btn) {
+        btn.innerText = "Deleting...";
+        btn.disabled = true;
+    }
+
+    const res = await fetch("/api/profile", {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${user.token}`
+      }
+    });
+
+    if (res.ok) {
+      showToast("Account deleted successfully.", "success");
+      // Clear local storage and bounce to home
+      setTimeout(() => {
+        localStorage.clear();
+        window.location.href = "/";
+      }, 1500);
+    } else {
+      showToast("Error: Could not delete account. Please try again or contact support.", "error");
+      if(btn) {
+          btn.innerText = "Delete Account";
+          btn.disabled = false;
+      }
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("Network error. Please check your connection.", "error");
+    const btn = document.querySelector("button[onclick='handleDeleteAccount()']");
+    if(btn) {
+        btn.innerText = "Delete Account";
+        btn.disabled = false;
+    }
+  }
 }

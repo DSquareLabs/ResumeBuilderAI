@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
@@ -6,6 +7,7 @@ from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.profile import router as profile_router
 from app.api.billing import router as billing_router
 
@@ -246,9 +248,9 @@ def result_page(resume_id: int):
 def robots():
     return FileResponse("app/static/robots.txt")
 
-@app.get("/sitemap.xml")
-def sitemap():
-    return FileResponse("app/static/sitemap.xml")
+@app.get("/privacy-policy")
+def privacy_policy():
+    return FileResponse("app/static/pages/extra/privacy.html")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -260,3 +262,10 @@ app.include_router(refine_router)
 
 from app.api.cover_letter import router as cover_letter_router
 app.include_router(cover_letter_router)
+
+# Custom 404 Error Handler
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request, exc):
+    if exc.status_code == 404:
+        return FileResponse("app/static/pages/extra/404.html", status_code=404)
+    raise exc

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found | ResumeAI</title>
+    <meta name="robots" content="noindex, nofollow" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/navbar.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 fill=%22white%22>AI</text></svg>">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5DS9BK1BGF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-5DS9BK1BGF');
+    </script>
+
+    <style>
+        :root {
+            --primary-blue: #0a66c2;
+            --primary-hover: #004182;
+            --bg-color: #f3f2ef;
+            --white: #ffffff;
+            --text-main: #191919;
+            --text-sub: #666666;
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .error-content {
+            text-align: center;
+            max-width: 500px;
+            background: var(--white);
+            padding: 60px 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+
+        .error-icon {
+            font-size: 80px;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .error-code {
+            font-size: 72px;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin: 20px 0;
+            line-height: 1;
+        }
+
+        .error-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 12px;
+        }
+
+        .error-description {
+            font-size: 16px;
+            color: var(--text-sub);
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .error-actions {
+            display: flex;
+            gap: 12px;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(10, 102, 194, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: #e8e8e8;
+            color: var(--text-main);
+            border: 1px solid #d0d0d0;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f0f0f0;
+            transform: translateY(-2px);
+        }
+
+        .illustration {
+            margin-bottom: 30px;
+            font-size: 120px;
+            line-height: 1;
+        }
+
+        @media (max-width: 600px) {
+            .error-content {
+                padding: 40px 24px;
+            }
+
+            .error-code {
+                font-size: 48px;
+            }
+
+            .error-title {
+                font-size: 24px;
+            }
+
+            .error-description {
+                font-size: 14px;
+            }
+
+            .illustration {
+                font-size: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo-container" aria-label="ResumeAI Home">
+                <span class="logo-text">Resume</span>
+                <span class="logo-badge">AI</span>
+            </a>
+            <button class="hamburger" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/pricing" class="nav-link">Pricing</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="error-content">
+            <div class="illustration">🔍</div>
+            <div class="error-code">404</div>
+            <h1 class="error-title">Page Not Found</h1>
+            <p class="error-description">
+                Sorry, the page you're looking for doesn't exist. It might have been moved or deleted.
+            </p>
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary">Back to Home</a>
+                <a href="/pricing" class="btn btn-secondary">View Pricing</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/common.js"></script>
+</body>
+</html>

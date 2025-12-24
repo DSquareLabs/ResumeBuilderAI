@@ -176,6 +176,20 @@
               <button type="submit" class="btn-primary">Save Profile</button>
             </div>
           </form>
+          <div id="dangerZone" style="margin-top: 50px; padding-top: 30px; border-top: 1px solid #fee2e2; display: none;">
+            <h4 style="color: #dc2626; margin-bottom: 10px; font-size: 0.95rem;">Danger Zone</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+              <p style="font-size: 0.85rem; color: #666; margin: 0; max-width: 400px;">
+                Once you delete your account, there is no going back. All saved data and credits will be permanently lost.
+              </p>
+              <button onclick="handleDeleteAccount()" 
+                      style="background: white; border: 1px solid #ef4444; color: #ef4444; padding: 10px 20px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;"
+                      onmouseover="this.style.background='#fef2f2'"
+                      onmouseout="this.style.background='white'">
+                Delete Account
+              </button>
+            </div>
+          </div>
         </section>
     </div>
 

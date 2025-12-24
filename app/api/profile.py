@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -91,3 +91,39 @@ def save_profile(data: ProfileRequest, email: str = Depends(get_verified_email))
         "message": "Profile saved successfully",
         "credits": profile.credits
     }
+
+
+@router.delete("/profile")
+def delete_profile(email: str = Depends(get_verified_email)):
+    """
+    Soft-delete the account to prevent credit abuse.
+    Wipes all personal data and credits, but keeps the email record.
+    """
+    db = SessionLocal()
+    
+    profile = db.query(Profile).filter(Profile.email == email).first()
+    
+    if not profile:
+        db.close()
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # 🛑 THE FIX: Anonymize instead of Delete
+    # We keep the row so they can't sign up again for free credits
+    profile.full_name = "Deleted User"
+    profile.phone = None
+    profile.location = None
+    profile.linkedin = None
+    profile.portfolio = None
+    profile.credits = 0  # 💀 Wipe their credits
+    
+    # Note: We keep the email so we recognize them if they return
+    
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Deletion failed")
+    finally:
+        db.close()
+    
+    return {"message": "Account data wiped successfully"}
