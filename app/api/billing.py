@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.dependencies import get_verified_email
 from app.models.profile import Profile
+from app.models.payment import Payment
 
 # Stripe setup
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
@@ -93,16 +94,18 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
 
     if event["type"] == "checkout.session.completed":
         session = event["data"]["object"]
-
         metadata = session.get("metadata", {})
-
+        
         email = metadata.get("email")
         pack_id = metadata.get("pack_id")
+        
+        # Get financial details
+        amount_total = session.get("amount_total", 0) / 100.0  # Convert cents to dollars/euros
+        currency = session.get("currency", "eur")
 
         if not email or not pack_id:
-            print("Webhook received test event without metadata, ignoring.")
             return {"status": "ignored"}
-
+            
         if pack_id not in CREDIT_PACKS:
             return {"status": "invalid pack"}
 
@@ -110,7 +113,22 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         if not user:
             return {"status": "user not found"}
 
-        user.credits = (user.credits or 0) + CREDIT_PACKS[pack_id]["credits"]
+        credits_to_add = CREDIT_PACKS[pack_id]["credits"]
+
+        # 1. Update User Credits
+        user.credits = (user.credits or 0) + credits_to_add
+        
+        # 2. Record Payment History (NEW)
+        new_payment = Payment(
+            email=email,
+            amount=amount_total,
+            currency=currency,
+            credits_added=credits_to_add,
+            plan_name=pack_id,
+            stripe_session_id=session.get("id")
+        )
+        db.add(new_payment)
+        
         db.commit()
 
     return {"status": "ok"}

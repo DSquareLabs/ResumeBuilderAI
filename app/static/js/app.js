@@ -61,6 +61,27 @@ async function loadUserProfile() {
     }
 
     currentProfile = await res.json();
+    
+    // --- 🚨 GATEKEEPER LOGIC 🚨 ---
+    
+    // Condition: Is this a Valid, Saved User?
+    const isValidUser = (currentProfile !== null);
+
+    
+
+    // B. HANDLE PAGE ACCESS
+    if (!isValidUser) {
+        // User exists in Google but NOT in Database (New User)
+        
+        if (window.location.pathname.includes("/builder")) {
+            // 🛑 STOP! You are not allowed here.
+            window.location.href = "/profile"; 
+            return; // Stop execution so the curtain never lifts
+        }
+        
+        // If on Profile page, let them stay (profile.js handles the UI)
+        return; 
+    }
 
     // Show credits
     const creditEl = document.getElementById("creditCount");

@@ -214,3 +214,81 @@ input:focus {
     grid-template-columns: 1fr; /* Stack inputs on mobile */
   }
 }
+
+
+
+
+/* --- TABS SYSTEM --- */
+.tabs-container {
+  display: flex;
+  background: #eef3f8; /* LinkedIn light blue-grey */
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.tab-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.tab-btn.active {
+  background: white;
+  color: var(--primary-blue);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.tab-btn:hover:not(.active) {
+  color: var(--text-main);
+  background: rgba(255,255,255,0.5);
+}
+
+/* --- ANIMATION --- */
+.tab-view {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- HISTORY TABLE --- */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.history-table th {
+  text-align: left;
+  font-size: 0.85rem;
+  color: #888;
+  font-weight: 600;
+  padding-bottom: 15px;
+}
+
+.history-table td {
+  padding: 15px 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.95rem;
+  color: var(--text-main);
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}

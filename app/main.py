@@ -11,6 +11,8 @@ from app.api.billing import router as billing_router
 
 from app.database import engine, Base
 from app.models.profile import Profile
+from app.models.payment import Payment
+
 from app.dependencies import get_verified_email
 
 Base.metadata.create_all(bind=engine)

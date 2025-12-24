@@ -26,8 +26,8 @@ function autofillFromGoogleIfEmpty() {
 }
 
 async function loadProfile() {
-  const title = document.getElementById("profileTitle");
-  const subtitle = document.getElementById("profileSubtitle");
+  const title = document.getElementById("pageTitle");
+  const subtitle = document.getElementById("pageSubtitle");
 
   const emailInput = document.getElementById("email");
   if (emailInput && user.email) {
@@ -48,7 +48,8 @@ async function loadProfile() {
 
     const profile = await res.json();
 
-    if (profile) {
+    if (profile && profile.full_name) {
+      // Existing user with complete profile
       document.getElementById("fullName").value = profile.full_name || "";
       document.getElementById("phone").value = profile.phone || "";
       document.getElementById("location").value = profile.location || "";
@@ -64,32 +65,56 @@ async function loadProfile() {
 
       // Set initials
       if (profile.full_name) {
-        const initials = profile.full_name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .substring(0, 2)
-          .toUpperCase();
+        const initials = profile.full_name.split(" ").map((n) => n[0]).join("").substring(0, 2).toUpperCase();
         document.getElementById("avatarInitials").innerText = initials;
       }
+
+      const creditDisplay = document.getElementById("profileCreditCount");
+      if (creditDisplay) {
+          creditDisplay.innerText = profile.credits || 0;
+      }
+
+      const historyContainer = document.getElementById("paymentHistoryContainer");
+      const emptyHistory = document.getElementById("emptyHistory");
+      const historyBody = document.getElementById("paymentHistoryBody");
+      
+      if (profile.history && profile.history.length > 0) {
+          if(historyContainer) historyContainer.style.display = "block";
+          if(emptyHistory) emptyHistory.style.display = "none";
+          
+          if(historyBody) {
+             historyBody.innerHTML = profile.history.map(pay => `
+                <tr>
+                    <td>${pay.date}</td>
+                    <td><span style="background:#eff6ff; color:#1d4ed8; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600;">${pay.plan}</span></td>
+                    <td>${pay.amount}</td>
+                    <td style="text-align: right; color: #059669; font-weight: 700;">${pay.credits}</td>
+                </tr>
+             `).join("");
+          }
+      } else {
+          if(historyContainer) historyContainer.style.display = "none";
+          if(emptyHistory) emptyHistory.style.display = "block";
+      }
+
     }
     else {
+      // New user - no profile yet
       title.innerText = "Complete Your Profile";
       subtitle.innerText = "We'll use these details to build your resume.";
       autofillFromGoogleIfEmpty();
-      // Optional: Info toast for new users
+      switchProfileTab('settings');
       showToast("Welcome! Please complete your profile.", "info");
     }
   } catch (err) {
     console.error("Error loading profile:", err);
     
-    // ✅ UX IMPROVEMENT: Error Toast
-    showToast("Could not load profile data. Please refresh.", "error");
-
-    // Fallback UX
+    // New user scenario - show profile completion form
     title.innerText = "Complete Your Profile";
     subtitle.innerText = "We'll use these details to build your resume.";
     autofillFromGoogleIfEmpty();
+    switchProfileTab('settings');
+    showToast("Welcome! Please complete your profile first.", "info");
   }
 }
 
@@ -148,5 +173,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+function switchProfileTab(tabName) {
+    const title = document.getElementById("pageTitle");
+    const subtitle = document.getElementById("pageSubtitle");
+    const walletView = document.getElementById("walletView");
+    const settingsView = document.getElementById("settingsView");
+    const tabs = document.querySelectorAll(".tab-btn");
 
-
+    if (tabName === 'wallet') {
+        // Show Wallet
+        walletView.style.display = "block";
+        settingsView.style.display = "none";
+        title.innerText = "My Wallet";
+        subtitle.innerText = "Manage your credits and transactions.";
+        
+        // Update Tab Active State - tabs[0] is "Edit Profile", tabs[1] is "My Wallet"
+        tabs[0].classList.remove("active");
+        tabs[1].classList.add("active");
+        
+    } else {
+        // Show Settings
+        walletView.style.display = "none";
+        settingsView.style.display = "block";
+        title.innerText = "Edit Profile";
+        subtitle.innerText = "Update your resume details.";
+        
+        // Update Tab Active State - tabs[0] is "Edit Profile", tabs[1] is "My Wallet"
+        tabs[0].classList.add("active");
+        tabs[1].classList.remove("active");
+    }
+}

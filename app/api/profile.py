@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.profile import Profile
 from app.dependencies import get_verified_email
+from app.models.payment import Payment
 
 router = APIRouter()
 
@@ -19,18 +20,28 @@ class ProfileRequest(BaseModel):
 
 @router.get("/profile")
 def get_profile(email: str = Depends(get_verified_email)):
-    """
-    Fetch user profile. Email is extracted from verified Google token.
-    """
     db: Session = SessionLocal()
 
     profile = db.query(Profile).filter(Profile.email == email).first()
+    
+    # Fetch last 5 payments
+    payments_query = db.query(Payment).filter(Payment.email == email).order_by(Payment.created_at.desc()).limit(5).all()
+    
+    # Format payments
+    payment_history = []
+    for p in payments_query:
+        payment_history.append({
+            "date": p.created_at.strftime("%Y-%m-%d"),
+            "amount": f"{p.amount:.2f} {p.currency.upper()}",
+            "credits": f"+{p.credits_added}",
+            "plan": p.plan_name.title()
+        })
+
     db.close()
 
     if not profile:
         return None
 
-    # ✅ RETURN CLEAN JSON (IMPORTANT)
     return {
         "email": profile.email,
         "full_name": profile.full_name,
@@ -38,7 +49,8 @@ def get_profile(email: str = Depends(get_verified_email)):
         "location": profile.location,
         "linkedin": profile.linkedin,
         "portfolio": profile.portfolio,
-        "credits": profile.credits
+        "credits": profile.credits,
+        "history": payment_history  # <--- NEW FIELD
     }
 
 

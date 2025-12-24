@@ -55,82 +55,129 @@
   <main class="main-container">
 
     <header class="page-header">
-      <h1 id="profileTitle">Loading profile…</h1>
-      <p id="profileSubtitle">Please wait</p>
-
+      <h1 id="pageTitle">Edit Profile</h1> <p id="pageSubtitle">Update your resume details.</p>
     </header>
 
-    <section class="profile-card">
-      
-      <div class="avatar-section">
-        <div class="avatar-placeholder">
-          <span id="avatarInitials">AI</span>
-        </div>
-        <div class="avatar-info">
-          <h3>Profile Details</h3>
-          <p>Ensure your contact info is up to date.</p>
-        </div>
-      </div>
+    <div class="tabs-container">
+       <button class="tab-btn active" onclick="switchProfileTab('settings')">
+          <span class="material-icons-round">manage_accounts</span>
+          Edit Profile
+       </button>
+       <button class="tab-btn" onclick="switchProfileTab('wallet')">
+          <span class="material-icons-round">account_balance_wallet</span>
+          My Wallet
+       </button>
+    </div>
 
-      <hr class="divider">
-
-      <form id="profileForm">
-
-        
-        <h4 class="section-title">Contact Information</h4>
-        
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="fullName">Full Name <span class="required">*</span></label>
-            <input type="text" id="fullName" placeholder="Ex: John Doe" required>
+    <div id="walletView" class="tab-view fade-in" style="display: none;">
+        <section class="profile-card" style="border-top: 4px solid #10B981;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+               <div class="avatar-placeholder" style="background: #ecfdf5; color: #10B981;">
+                  <span class="material-icons-round">bolt</span>
+               </div>
+               <div>
+                  <h3 style="margin: 0; font-size: 1rem; color: #666;">Available Balance</h3>
+                  <h2 id="profileCreditCount" style="margin: 0; font-size: 2.2rem; color: #059669;">--</h2>
+               </div>
+            </div>
+            <a href="/pricing" class="btn-primary" style="background: #10B981; padding: 12px 24px; display: flex; align-items: center; gap: 8px;">
+               <span class="material-icons-round" style="font-size: 18px;">add_circle</span> 
+               Buy Credits
+            </a>
           </div>
 
-          <div class="form-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" class="disabled-input" disabled>
+          <div id="paymentHistoryContainer" style="display: none; margin-top: 40px;">
+              <h4 style="margin-bottom: 20px; font-size: 0.95rem; color: #444; border-bottom: 2px solid #f3f4f6; padding-bottom: 10px;">
+                Transaction History
+              </h4>
+              <table class="history-table">
+                 <thead>
+                    <tr>
+                       <th>Date</th>
+                       <th>Plan</th>
+                       <th>Amount</th>
+                       <th style="text-align: right;">Credits</th>
+                    </tr>
+                 </thead>
+                 <tbody id="paymentHistoryBody">
+                    </tbody>
+              </table>
           </div>
 
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
-            <input type="tel" id="phone" placeholder="Ex: +1 (555) 000-0000">
+          <div id="emptyHistory" style="display:none; text-align: center; padding: 40px; color: #999;">
+             <span class="material-icons-round" style="font-size: 48px; color: #eee;">receipt_long</span>
+             <p>No transactions yet.</p>
           </div>
 
-          <div class="form-group">
-            <label for="location">Location</label>
-            <input type="text" id="location" placeholder="City, Country">
-          </div>
-        </div>
+        </section>
+    </div>
 
-        <hr class="divider">
-      
-
-        <h4 class="section-title">Professional Links (Optional) </h4>
-        
-
-        <div class="form-grid">
-          <div class="form-group full-width">
-            <label for="linkedin">LinkedIn Profile</label>
-            <div class="input-icon-wrapper">
-              <span class="icon">in</span>
-              <input type="url" id="linkedin" placeholder="https://linkedin.com/in/username">
+    <div id="settingsView" class="tab-view">
+        <section class="profile-card">
+          <div class="avatar-section">
+            <div class="avatar-placeholder">
+              <span id="avatarInitials">ME</span>
+            </div>
+            <div class="avatar-info">
+              <h3>Personal Details</h3>
+              <p>Used to auto-fill your resume headers.</p>
             </div>
           </div>
 
-          <div class="form-group full-width">
-            <label for="portfolio">Portfolio / GitHub / Website</label>
-            <div class="input-icon-wrapper">
-              <span class="icon">🌐</span>
-              <input type="url" id="portfolio" placeholder="https://myportfolio.com">
+          <hr class="divider">
+
+          <form id="profileForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" placeholder="Ex: John Doe" required>
+              </div>
+
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" class="disabled-input" disabled>
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" placeholder="Ex: +1 (555) 000-0000">
+              </div>
+
+              <div class="form-group">
+                <label for="location">Location</label>
+                <input type="text" id="location" placeholder="City, Country">
+              </div>
             </div>
-          </div>
-        </div>
 
-        <div class="form-actions">
-          <button type="submit" class="btn-primary">Save & Continue</button>
-        </div>
+            <hr class="divider">
 
-      </form>
-    </section>
+            <h4 class="section-title">Links</h4>
+            <div class="form-grid">
+              <div class="form-group full-width">
+                <label for="linkedin">LinkedIn</label>
+                <div class="input-icon-wrapper">
+                  <span class="icon">in</span>
+                  <input type="url" id="linkedin" placeholder="https://linkedin.com/in/username">
+                </div>
+              </div>
+
+              <div class="form-group full-width">
+                <label for="portfolio">Portfolio</label>
+                <div class="input-icon-wrapper">
+                  <span class="icon">🌐</span>
+                  <input type="url" id="portfolio" placeholder="https://myportfolio.com">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">Save Profile</button>
+            </div>
+          </form>
+        </section>
+    </div>
 
   </main>
 
