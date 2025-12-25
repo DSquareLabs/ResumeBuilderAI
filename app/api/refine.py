@@ -36,7 +36,8 @@ def internal_calculate_ats_mini(resume_html: str, job_desc: str) -> int:
     if not job_desc or len(job_desc) < 10:
         return 0
 
-    prompt = f"""
+    # ⚠️ FIX: Do NOT use f-string with HTML because CSS curly braces {} will break it.
+    prompt_intro = """
     You are a strict ATS Algorithm. 
     TASK: Calculate a match score (0-100) between the Resume and JD.
     SCORING RULES:
@@ -46,18 +47,15 @@ def internal_calculate_ats_mini(resume_html: str, job_desc: str) -> int:
     4. CAP at 100.
     
     OUTPUT: Return ONLY the integer number. No text.
-
-    RESUME HTML:
-    {resume_html[:15000]} 
-
-    JOB DESCRIPTION:
-    {job_desc[:5000]}
     """
+    
+    # Safe concatenation
+    full_prompt = prompt_intro + "\n\nRESUME HTML:\n" + resume_html[:15000] + "\n\nJOB DESCRIPTION:\n" + job_desc[:5000]
     
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{"role": "user", "content": full_prompt}],
             temperature=0.0,
             max_completion_tokens=10,
         )
@@ -66,7 +64,8 @@ def internal_calculate_ats_mini(resume_html: str, job_desc: str) -> int:
         # 🛡️ SAFETY: Use Regex to find the number hidden in text
         match = re.search(r'\d+', score_text)
         return int(match.group()) if match else 0
-    except:
+    except Exception as e:
+        print(f"⚠️ ATS Calculation Failed: {e}")
         return 0
 
 @router.post("/refine-resume")

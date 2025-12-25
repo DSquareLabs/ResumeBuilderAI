@@ -1530,11 +1530,11 @@ function importSession(event) {
                     const score = parseInt(data.outputs.atsScore);
                     
                     // A. Update Text
-                    atsScoreEl.innerText = score;
+                    atsScore.innerText = score;
                     
                     // B. Update Color Logic (Crucial!)
                     const level = score >= 80 ? "high" : score >= 60 ? "medium" : "low";
-                    atsScoreEl.parentElement.className = `score-circle ${level}`;
+                    atsScore.parentElement.className = `score-circle ${level}`;
                     
                     // C. Update Gauge Visual
                     if (typeof updateGauge === "function") updateGauge(score);
