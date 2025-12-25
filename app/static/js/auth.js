@@ -5,10 +5,8 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // --- 1. MULTI-TAB SYNC (The "Smart" Logout) ---
-// If user logs out in Tab A, Tab B will immediately know and redirect.
 window.addEventListener('storage', function(event) {
     if (event.key === 'user' && !event.newValue) {
-        // User key was removed (logged out) in another tab
         window.location.href = '/'; 
     }
 });
@@ -32,11 +30,14 @@ function updateAuthUI() {
             displayName = user.name.split(' ')[0]; // Just get first name
         }
 
-        // A. Update Navbar
+        // A. Update Navbar (Home Page & Pricing Page)
         if (navAuthSection) {
             navAuthSection.innerHTML = `
                 <div class="user-menu" style="display: flex; align-items: center; gap: 10px; margin-left: 10px;">
-                    <span class="user-badge">${escapeHtml(displayName)}</span>
+                    <a href="/profile" class="user-badge" title="Go to Profile" 
+                       style="text-decoration: none; cursor: pointer; color: inherit; font-weight: 600;">
+                        ${escapeHtml(displayName)}
+                    </a>
                     <button onclick="handleSignOut()" class="btn-signout">Sign Out</button>
                 </div>
             `;
@@ -49,7 +50,6 @@ function updateAuthUI() {
     } else {
         // --- LOGGED OUT STATE ---
         if (navAuthSection) {
-            // Restore Google Button container if needed
              navAuthSection.innerHTML = `
                 <div class="g_id_signin"
                      data-type="standard"
@@ -61,6 +61,19 @@ function updateAuthUI() {
                 </div>
             `;
         }
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+                google.accounts.id.renderButton(
+                    document.getElementById("nav-google-btn"), // The element we just created
+                    { 
+                        theme: "filled_blue", 
+                        size: "medium", 
+                        type: "standard",
+                        text: "signin",
+                        shape: "rectangular",
+                        logo_alignment: "left"
+                    }
+                );
+            }
         
         if (heroLoginArea) heroLoginArea.style.display = 'block';
         if (heroWelcomeArea) heroWelcomeArea.style.display = 'none';
@@ -80,23 +93,13 @@ function escapeHtml(text) {
 
 // --- 2. LOGOUT WITH TOAST (The "Cool" Logout) ---
 function handleSignOut() {
-    // 1. Show the toast
     if (window.showToast) {
         window.showToast("Logging out... See you soon! 👋", "info");
     }
 
-    // 2. Wait 800ms so they can read it, then kill the session
     setTimeout(() => {
-        logout(); // Calls the clean logout function in common.js or below
+        logout(); 
     }, 800);
-}
-
-// The actual data cleanup
-function logout() {
-    localStorage.removeItem("user");
-    localStorage.removeItem("profile");
-    localStorage.removeItem("currentProfile");
-    window.location.href = "/";
 }
 
 // Existing Google Callback 
@@ -110,10 +113,8 @@ async function handleGoogleLogin(response) {
             token: response.credential 
         }));
         
-        // Show success toast if available
         if (window.showToast) window.showToast("Signed in successfully!", "success");
 
-        // Validate with backend
         const res = await fetch("/api/profile", {
             headers: {
                 "Authorization": `Bearer ${response.credential}`
@@ -123,7 +124,6 @@ async function handleGoogleLogin(response) {
         if (res.ok) {
             const profile = await res.json();
             
-            // Redirect based on whether profile exists
             if (profile && profile.email) {
                 setTimeout(() => window.location.href = "/builder", 500);
             } else {

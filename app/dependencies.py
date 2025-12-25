@@ -20,9 +20,9 @@ def get_verified_email(credentials: HTTPAuthorizationCredentials = Depends(beare
     try:
         # 2. Verify the token
         idinfo = id_token.verify_oauth2_token(
-            token, google_requests.Request(), client_id
+            token, google_requests.Request(), client_id,clock_skew_in_seconds=10
         )
-        return idinfo["email"]
+        return idinfo["email"].lower()
         
     except ValueError as e:
         # 3. Print the specific error (e.g. "Token expired", "Audience mismatch")

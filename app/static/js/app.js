@@ -120,7 +120,7 @@ window.onload = () => {
       // If you have the updateGauge function accessible, call it here
       if (typeof updateGauge === "function") updateGauge(savedScore);
   }
-  
+
 };
 
 /*************************************************
@@ -923,12 +923,6 @@ async function updateResumeWithAI() {
   }
 }
 
-function logout() {
-  localStorage.removeItem("user");
-  localStorage.removeItem("profile");
-  localStorage.removeItem("currentProfile");
-  window.location.href = "/";
-}
 
 /*************************************************
  * MOBILE RESPONSIVENESS & UI ADJUSTMENTS

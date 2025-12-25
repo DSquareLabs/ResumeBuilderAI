@@ -227,3 +227,22 @@ function showConfirmDialog(title, message, confirmText = "Confirm", cancelText =
 }
 
 window.showConfirmDialog = showConfirmDialog;
+
+function logout() {
+      localStorage.removeItem("user");
+      localStorage.removeItem("profile");
+      localStorage.removeItem("currentProfile");
+
+      localStorage.removeItem("autosave_resume");
+      localStorage.removeItem("autosave_cl");
+      localStorage.removeItem("autosave_score");
+
+      window.location.href = "/";
+    }
+
+window.addEventListener('storage', function(event) {
+    if (event.key === 'user' && !event.newValue) {
+        console.log("Logged out in another tab. Redirecting...");
+        window.location.href = '/'; 
+    }
+});

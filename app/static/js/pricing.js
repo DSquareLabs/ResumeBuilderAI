@@ -64,10 +64,3 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-function logout() {
-      localStorage.removeItem("user");
-      localStorage.removeItem("profile");
-      // Also clear any other potential keys
-      localStorage.removeItem("currentProfile");
-      window.location.href = "/";
-    }
