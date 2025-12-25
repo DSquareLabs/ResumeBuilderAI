@@ -106,8 +106,9 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     
     # --- 🧠 SUPERIOR PROMPT ENGINEERING ---
     system_prompt = """
-    You are a Senior CSS Architect and Elite Career Strategist.
+    You are a Senior CSS Architect and Elite Career Strategist. and a Great Resume Writer whoes goal is to optimize resumes for both ATS systems and human recruiters.
     Your task is to take raw resume data and a job description, and transform it into a visually stunning, ATS-optimized HTML resume.
+    Dont be too formal with wordings like professional summary just keep it simple and straight to the point. which human recruiters will love and ATS systems can easily parse.
 
     🚨 CORE DIRECTIVE: VISUAL STYLE IS PARAMOUNT.
     You must strictly adhere to the requested "Visual Style" defined below. The CSS you generate must be distinct, professional, and pixel-perfect.
@@ -147,7 +148,7 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     3. **NO SCRIPTS:** Do not include any <script> tags or JavaScript.
     4. **Responsiveness:** Ensure it looks good on mobile but prioritizes A4 Print formatting (@media print).
     5. **Structure:** Use semantic tags (<header>, <section>, <ul>, <li>).
-    6. **Do Not add Page Borders or shadows in the css design**
+    6. **Do Not add Page Borders or shadows in the css design** (Very Important)
 
     Format your response EXACTLY like this:
     ===RESUME_HTML===

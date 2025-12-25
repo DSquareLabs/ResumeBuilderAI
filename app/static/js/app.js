@@ -861,7 +861,9 @@ async function updateResumeWithAI() {
 
   try {
     const currentHTML = document.getElementById('output').innerHTML;
-
+    const jobDescription = document.getElementById("jobDescription").value.trim();
+    const currentScoreEl = document.getElementById("atsScore");
+    const currentScore = currentScoreEl ? (parseInt(currentScoreEl.innerText) || 0) : 0;
     // 3. Send to Backend
     // 🔒 SECURE: No email in body, use JWT token
     const response = await fetch("/api/refine-resume", { 
@@ -872,8 +874,9 @@ async function updateResumeWithAI() {
       },
       body: JSON.stringify({
         html: currentHTML,
-        instruction: instruction
-        // ✅ NO email field - it comes from JWT token
+        instruction: instruction,
+        job_description: jobDescription, // ✅ Sending JD
+        current_ats_score: currentScore
       })
     });
 
@@ -902,6 +905,24 @@ async function updateResumeWithAI() {
     const creditEl = document.getElementById("creditCount");
     if (creditEl) {
       creditEl.innerText = currentProfile.credits;
+    }
+
+    if (data.ats_score !== undefined && data.ats_score !== null) {
+        const atsScoreEl = document.getElementById("atsScore");
+        if (atsScoreEl) {
+             atsScoreEl.innerText = data.ats_score;
+             
+             // Update Visuals
+             const level = data.ats_score >= 80 ? "high" : data.ats_score >= 60 ? "medium" : "low";
+             atsScoreEl.parentElement.className = `score-circle ${level}`;
+             if (typeof updateGauge === "function") updateGauge(data.ats_score);
+             
+             // Auto-save
+             localStorage.setItem("autosave_score", data.ats_score);
+        }
+        showToast(`Updated! (New Score: ${data.ats_score})`, "success");
+    } else {
+        showToast("Resume updated successfully!", "success");
     }
 
     // 6. Success Feedback
@@ -1239,6 +1260,20 @@ async function handleRefine() {
     }
 }
 
+function fillRefineInput(text) {
+    const input = document.querySelector('.refine-input');
+    if (input) {
+        input.value = text;
+        input.focus();
+        
+        // If the text ends with a space (like "Add... "), move cursor to end
+        if (text.endsWith(' ')) {
+            const len = input.value.length;
+            input.setSelectionRange(len, len);
+        }
+    }
+}
+
 async function updateCoverLetterWithAI() {
     // Implementation matches updateResumeWithAI but points to document.getElementById('output-cl')
     // and calls /api/refine-resume with type: "cover_letter"
@@ -1492,8 +1527,20 @@ function importSession(event) {
                 }
 
                 if (data.outputs.atsScore && data.outputs.atsScore !== "--") {
-                    atsScore.innerText = data.outputs.atsScore;
-                    updateGauge(data.outputs.atsScore);
+                    const score = parseInt(data.outputs.atsScore);
+                    
+                    // A. Update Text
+                    atsScoreEl.innerText = score;
+                    
+                    // B. Update Color Logic (Crucial!)
+                    const level = score >= 80 ? "high" : score >= 60 ? "medium" : "low";
+                    atsScoreEl.parentElement.className = `score-circle ${level}`;
+                    
+                    // C. Update Gauge Visual
+                    if (typeof updateGauge === "function") updateGauge(score);
+                    
+                    // D. Sync Auto-Save (So refreshing keeps the color)
+                    localStorage.setItem("autosave_score", score);
                 }
             }
 

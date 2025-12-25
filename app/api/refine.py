@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from openai import OpenAI
 import os
+import re
 
 from app.database import get_db
 from app.dependencies import get_verified_email
@@ -23,7 +24,50 @@ CHAR_LIMIT_HTML_SAFETY = 30000
 class RefineRequest(BaseModel):
     html: str
     instruction: str
-    type: str = "resume" 
+    job_description: str = "" 
+    current_ats_score: int = 0 
+    type: str = "resume"
+    
+
+def internal_calculate_ats_mini(resume_html: str, job_desc: str) -> int:
+    """
+    Internal helper to calculate ATS score cheaply using GPT-4o-mini.
+    """
+    if not job_desc or len(job_desc) < 10:
+        return 0
+
+    prompt = f"""
+    You are a strict ATS Algorithm. 
+    TASK: Calculate a match score (0-100) between the Resume and JD.
+    SCORING RULES:
+    1. EXTRACT keywords from JD.
+    2. COUNT matches in Resume HTML.
+    3. MATH: (Matches / Total Keywords) * 100.
+    4. CAP at 100.
+    
+    OUTPUT: Return ONLY the integer number. No text.
+
+    RESUME HTML:
+    {resume_html[:15000]} 
+
+    JOB DESCRIPTION:
+    {job_desc[:5000]}
+    """
+    
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.0,
+            max_completion_tokens=10,
+        )
+        score_text = response.choices[0].message.content.strip()
+        print(f"💰 ATS Calc Raw Output: {score_text}")
+        # 🛡️ SAFETY: Use Regex to find the number hidden in text
+        match = re.search(r'\d+', score_text)
+        return int(match.group()) if match else 0
+    except:
+        return 0
 
 @router.post("/refine-resume")
 def refine_resume(data: RefineRequest, email: str = Depends(get_verified_email), db: Session = Depends(get_db)):
@@ -99,9 +143,19 @@ def refine_resume(data: RefineRequest, email: str = Depends(get_verified_email),
         if not updated_html:
             raise ValueError("Empty response from AI")
         
+        new_ats_score = data.current_ats_score
+        
+        if data.type == "resume" and data.job_description and len(data.job_description) > 10:
+            calculated_score = internal_calculate_ats_mini(updated_html, data.job_description)
+            if calculated_score > 0:
+                new_ats_score = calculated_score
+            else:
+                print("⚠️ Calculated score was 0, keeping old score.")
+        
         # ✅ SUCCESS! Credits already deducted (atomic)
         return {
             "updated_html": updated_html,
+            "ats_score": new_ats_score,
             "credits_left": remaining_credits
         }
 
