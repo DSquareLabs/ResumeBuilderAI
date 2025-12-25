@@ -38,11 +38,16 @@ client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
 
 app = FastAPI()
 
+origins = [
+    "https://myresumematch.com",
+    "http://localhost:8000" # Keep for local testing
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,
+    allow_methods=origins,
+    allow_headers=origins,
 )
 
 ENV = os.getenv("ENV", "dev")
