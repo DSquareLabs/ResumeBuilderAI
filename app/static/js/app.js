@@ -88,6 +88,8 @@ async function loadUserProfile() {
     if (creditEl) {
       creditEl.innerText = currentProfile.credits ?? 0;
     }
+    
+  checkPaymentStatus(); 
   } catch (err) {
     console.error("Error loading profile:", err);
   }
@@ -96,7 +98,6 @@ async function loadUserProfile() {
 window.onload = () => {
   loadUserProfile();
   setupCharacterCounters();
-  checkPaymentStatus(); // Check for payment confirmation
   setupPDFUpload(); // Setup PDF upload handler
 };
 

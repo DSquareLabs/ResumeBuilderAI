@@ -13,6 +13,7 @@ from app.models.payment import Payment
 # Stripe setup
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 
+
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
 # 🔒 Credit packs (single source of truth)
@@ -55,6 +56,8 @@ def create_checkout_session(
         raise HTTPException(status_code=404, detail="User not found")
 
     price_id = CREDIT_PACKS[plan]["price_id"]
+    
+    base_url = os.getenv("BASE_URL", "http://localhost:8000")
 
     session = stripe.checkout.Session.create(
         mode="payment",
@@ -64,8 +67,8 @@ def create_checkout_session(
             "quantity": 1
         }],
         customer_email=email,
-        success_url=f"http://localhost:8000/builder?payment=success&plan={plan}",
-        cancel_url="http://localhost:8000/pricing?payment=cancelled",
+        success_url=f"{base_url}/builder?payment=success&plan={plan}",
+        cancel_url=f"{base_url}/pricing?payment=cancelled",
         metadata={
             "pack_id": plan,
             "email": email
