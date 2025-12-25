@@ -274,6 +274,11 @@ textarea:focus, .modern-select:focus {
   word-wrap: break-word;
 }
 
+/* Cover letter specific: no padding since it has its own margins */
+#output-cl {
+  padding: 2px 0;
+}
+
 /* Material Icon Alignment Fix */
 .material-icons-round { vertical-align: middle; }
 

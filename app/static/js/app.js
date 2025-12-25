@@ -1009,8 +1009,10 @@ function switchView(view) {
     
     // Update Tabs UI
     document.querySelectorAll('.view-tab').forEach(btn => {
-        const text = btn.innerText.toLowerCase();
-        if (text.includes(view.replace('_', ' '))) {
+        const text = btn.innerText.toLowerCase().replace(/\s/g, '');
+        const target = view.replace(/_/g, '').toLowerCase();
+
+        if (text.includes(target)) {
              btn.classList.add('active');
         } else {
              btn.classList.remove('active');
@@ -1021,7 +1023,7 @@ function switchView(view) {
     const resumeEl = document.getElementById('output');
     const clEl = document.getElementById('output-cl');
     const historyEl = document.getElementById('output-history');
-    
+    const atsContainer = document.getElementById('atsContainer');
     const previewActions = document.getElementById('previewActions'); // ATS & Download buttons
     const refineBar = document.getElementById('aiRefineBar');
 
@@ -1035,7 +1037,7 @@ function switchView(view) {
     if (view === 'resume') {
         resumeEl.style.display = 'block';
         if(previewActions) previewActions.style.visibility = 'visible';
-        
+        if(atsContainer) atsContainer.style.display = 'flex';
         // Only show Refine bar if Resume is actually generated
         if(refineBar) {
             refineBar.style.display = hasContent(resumeEl) ? 'block' : 'none';
@@ -1044,7 +1046,7 @@ function switchView(view) {
     else if (view === 'coverletter') {
         clEl.style.display = 'block';
         if(previewActions) previewActions.style.visibility = 'visible';
-        
+        if(atsContainer) atsContainer.style.display = 'none';
         // Only show Refine bar if Cover Letter is actually generated
         if(refineBar) {
             refineBar.style.display = hasContent(clEl) ? 'block' : 'none';
@@ -1219,7 +1221,6 @@ async function submitCoverLetterGen() {
         // Show Refine Bar (content was generated successfully)
         document.getElementById("aiRefineBar").style.display = "block";
         showToast("Cover Letter generated successfully!", "success");
-        document.getElementById("output-cl").innerHTML = data.cover_letter_html;
         localStorage.setItem("autosave_cl", data.cover_letter_html);
 
     } catch (err) {

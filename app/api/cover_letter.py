@@ -72,8 +72,8 @@ def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email)
     - DO NOT say "I have X skills." Show, don't tell.
 
     ✅ DESIGN RULES (SIMPLE & CLEAN):
-    - Generate ONLY the HTML content (no <head>, <body>).
-    - Embed CSS in <style> tags.
+    - Generate ONLY the HTML content wrapped in <div class="cover-letter-content">...</div>
+    - Embed CSS in <style> tags at the top, scoping ALL selectors to .cover-letter-content (e.g., .cover-letter-content p { margin: 0 0 1em 0; })
     - STYLE: Professional Business Letter.
       - Size: 11pt or 12pt.
       - Color: #000000 (Pure Black).
@@ -81,6 +81,7 @@ def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email)
       - NO background colors. NO creative elements. Just text on paper.
 
     ✅ CONTENT RULES (THE STORY):
+    0. Write the users details in a professional header at the top (name, email, phone).
     1. **Salutation:** Use the provided Hiring Manager name.
     2. **The Hook (Paragraph 1):** Why them? Use the user's 'Motivation' input to create a genuine connection to the company.
     3. **The 'Special Experience' (Paragraph 2):** This is the core. Use the user's 'Highlight' input. 
@@ -88,7 +89,7 @@ def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email)
        - If they didn't, find the strongest match in their Resume and tell it as a short success story.
     4. **The Closing:** Confident, professional, and requesting a specific next step.
     
-    Output format: Just the HTML string starting with <style>...
+    Output format: Just the HTML string starting with <div class="cover-letter-content"><style>...
     """
     manager_name = data.hiring_manager.strip() if data.hiring_manager else "Hiring Manager"
     if not manager_name: manager_name = "Hiring Manager"
