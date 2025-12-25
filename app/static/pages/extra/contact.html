@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Us | ResumeAI</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/static/css/navbar.css">
+  
+  <style>
+    :root {
+      --primary-blue: #0a66c2;
+      --text-main: #191919;
+      --text-sub: #666666;
+      --bg-color: #f3f2ef;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .contact-container {
+      max-width: 800px;
+      margin: 60px auto;
+      padding: 0 20px;
+      text-align: center;
+      flex: 1; /* Pushes footer down */
+    }
+
+    .contact-card {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border: 1px solid #e0e0e0;
+    }
+
+    h1 { margin-bottom: 15px; font-size: 2rem; color: var(--text-main); }
+    p { color: var(--text-sub); line-height: 1.6; margin-bottom: 25px; }
+
+    .email-box {
+      background: #eff6ff;
+      border: 2px dashed #bfdbfe;
+      padding: 20px;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 20px 0;
+    }
+
+    .email-link {
+      color: var(--primary-blue);
+      font-weight: 700;
+      font-size: 1.2rem;
+      text-decoration: none;
+    }
+    .email-link:hover { text-decoration: underline; }
+
+    .support-note {
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 30px;
+    }
+    
+    footer {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="logo-container" style="text-decoration: none;">
+        <span class="logo-text" style="font-weight: 800; font-size: 1.5rem; color: #0a66c2;">Resume</span>
+        <span class="logo-badge" style="background: #0a66c2; color: white; padding: 2px 6px; border-radius: 4px; font-weight: 700;">AI</span>
+      </a>
+      <a href="/" style="text-decoration: none; color: #666; font-weight: 500;">&larr; Back to Home</a>
+    </div>
+  </nav>
+
+  <main class="contact-container">
+    <div class="contact-card">
+      <h1>Get in Touch</h1>
+      <p>
+        Have a question about your credits, a bug report, or feature request? 
+        <br>We're here to help.
+      </p>
+
+      <div class="email-box">
+        <span style="display:block; font-size: 0.85rem; color: #666; margin-bottom: 5px;">Email Support</span>
+        <a href="mailto:snippetvibes@gmail.com" class="email-link">snippetvibes@gmail.com</a>
+      </div>
+
+      <p class="support-note">
+        We typically respond within 72 hours on business days.
+        <br>Please include your <strong>account email</strong> if inquiring about an order.
+      </p>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 ResumeAI. All rights reserved.
+  </footer>
+
+</body>
+</html>

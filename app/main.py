@@ -258,6 +258,10 @@ def robots():
 def privacy_policy():
     return FileResponse("app/static/pages/extra/privacy.html")
 
+@app.get("/extra/contact")
+def contact_page():
+    return FileResponse("app/static/pages/extra/contact.html")
+
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 app.include_router(profile_router, prefix="/api")
