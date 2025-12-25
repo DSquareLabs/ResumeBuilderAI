@@ -99,6 +99,28 @@ window.onload = () => {
   loadUserProfile();
   setupCharacterCounters();
   setupPDFUpload(); // Setup PDF upload handler
+
+  const savedResume = localStorage.getItem("autosave_resume");
+  const savedCL = localStorage.getItem("autosave_cl");
+  const savedScore = localStorage.getItem("autosave_score");
+
+  if (savedResume && document.getElementById("output")) {
+      document.getElementById("output").innerHTML = savedResume;
+      document.getElementById("output").contentEditable = true;
+      document.getElementById("aiRefineBar").style.display = "block";
+  }
+  
+  if (savedCL && document.getElementById("output-cl")) {
+      document.getElementById("output-cl").innerHTML = savedCL;
+      document.getElementById("output-cl").contentEditable = true;
+  }
+
+  if (savedScore && document.getElementById("atsScore")) {
+      document.getElementById("atsScore").innerText = savedScore;
+      // If you have the updateGauge function accessible, call it here
+      if (typeof updateGauge === "function") updateGauge(savedScore);
+  }
+  
 };
 
 /*************************************************
@@ -605,6 +627,11 @@ async function generateResume() {
     }
     showToast("Resume generated successfully!", "success");  
     finishGenerate();
+
+    document.getElementById("output").innerHTML = data.resume_html;
+    
+    localStorage.setItem("autosave_resume", data.resume_html);
+    if(data.ats_score) localStorage.setItem("autosave_score", data.ats_score);
 
   } catch (err) {
     console.error("Resume generation error:", err);
@@ -1198,6 +1225,8 @@ async function submitCoverLetterGen() {
         // Show Refine Bar (content was generated successfully)
         document.getElementById("aiRefineBar").style.display = "block";
         showToast("Cover Letter generated successfully!", "success");
+        document.getElementById("output-cl").innerHTML = data.cover_letter_html;
+        localStorage.setItem("autosave_cl", data.cover_letter_html);
 
     } catch (err) {
         console.error(err);

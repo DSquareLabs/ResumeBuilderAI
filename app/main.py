@@ -72,7 +72,6 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     🔒 SECURITY: Email comes from verified JWT token, never from request body.
     """
     
-    db = next(get_db())
     
     # ✅ VALIDATION 1: Character Limits
     if len(data.resume_text) > CHAR_LIMIT_RESUME_EXPERIENCE:
