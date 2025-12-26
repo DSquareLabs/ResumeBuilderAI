@@ -25,14 +25,18 @@ async function loadUserProfile() {
 
   // 1. No user stored? Redirect unless on public pricing page
   if (!storedUser) {
-    if (window.location.pathname !== "/pricing" && window.location.pathname !== "/") {
+    if (window.location.pathname !== "/pricing" && window.location.pathname !== "/" && 
+      window.location.pathname !== "/builder") {
       window.location.href = "/";
     }
-    return;
+    const creditEl = document.getElementById("creditCount");
+    if (creditEl) creditEl.innerText = "Guest Mode (0)"; // Show "Guest" instead of credits
+    updateNavbarUI(null);
   }
 
+  
   currentUser = JSON.parse(storedUser);
-
+  updateNavbarUI(currentUser);
   // 2. Bad data? Clean up and kick out.
   if (!currentUser.email || !currentUser.token) {
     console.error("User email or token missing");
@@ -100,6 +104,9 @@ window.onload = () => {
   setupCharacterCounters();
   setupPDFUpload(); // Setup PDF upload handler
 
+  restoreDrafts();
+  setupDraftSaving();
+
   const savedResume = localStorage.getItem("autosave_resume");
   const savedCL = localStorage.getItem("autosave_cl");
   const savedScore = localStorage.getItem("autosave_score");
@@ -121,7 +128,35 @@ window.onload = () => {
       if (typeof updateGauge === "function") updateGauge(savedScore);
   }
 
+
 };
+
+function setupDraftSaving() {
+  const fields = ["resumeText", "jobDescription", "styleSelect"];
+  
+  fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+          el.addEventListener("input", (e) => {
+              localStorage.setItem("draft_" + id, e.target.value);
+          });
+      }
+  });
+}
+
+function restoreDrafts() {
+  const fields = ["resumeText", "jobDescription", "styleSelect"];
+  
+  fields.forEach(id => {
+      const saved = localStorage.getItem("draft_" + id);
+      const el = document.getElementById(id);
+      if (saved && el) {
+          el.value = saved;
+          // Trigger counter updates if they exist
+          el.dispatchEvent(new Event('input')); 
+      }
+  });
+}
 
 /*************************************************
  * CHARACTER COUNTER SETUP & UTILITIES
@@ -529,6 +564,10 @@ function stopTipRotation() {
  * GENERATE RESUME
  *************************************************/
 async function generateResume() {
+  if (!currentUser) {
+    showToast("Please sign in to generate your CVs! 🚀", "info");
+    return;
+}
   startGenerate('resume');
 
   const resumeText = document.getElementById("resumeText").value.trim();
@@ -835,6 +874,10 @@ function showPaymentPopup(success, plan) {
  * UPDATE RESUME WITH AI (Refine)
  *************************************************/
 async function updateResumeWithAI() {
+  if (!currentUser) {
+    showToast("Please sign in to generate your CVs! 🚀", "info");
+    return;
+  } 
   const inputEl = document.querySelector('.refine-input');
   const instruction = inputEl.value.trim();
   
@@ -1172,6 +1215,10 @@ function handleMainGenerate() {
 
 // --- GENERATE COVER LETTER API CALL ---
 async function submitCoverLetterGen() {
+  if (!currentUser) {
+    showToast("Please sign in to generate your CVs! 🚀", "info");
+    return;
+} 
     closeCLModal();
 
     const resumeText = document.getElementById("resumeText").value.trim();
@@ -1556,4 +1603,95 @@ function importSession(event) {
     
     // Reset input so we can upload the same file again if needed
     event.target.value = '';
+}
+
+/*************************************************
+ * NAVBAR DYNAMIC UI
+ *************************************************/
+function updateNavbarUI(user) {
+  // 1. Find the container
+  const container = document.getElementById("nav-links-container");
+  if (!container) return;
+
+  if (user) {
+      // --- LOGGED IN (Profile First) ---
+      container.innerHTML = `
+          <a href="/profile" class="nav-link" style="font-weight:600;">My Profile</a>
+          <a href="/pricing" class="nav-link">Pricing</a>
+          <a href="#" class="nav-link logout" onclick="logout(); return false;">Sign Out</a>
+      `;
+  } else {
+      // --- GUEST (Pricing First) ---
+      // We add a placeholder div with specific dimensions to prevent layout shift
+      container.innerHTML = `
+          <a href="/pricing" class="nav-link">Pricing</a>
+          <div id="google-nav-btn" style="display: inline-flex; align-items: center; margin-left: 10px; min-height: 40px; min-width: 100px;"></div>
+      `;
+
+      // 2. RETRY LOGIC: Wait for Google Script to load
+      let attempts = 0;
+      const renderGoogleBtn = () => {
+          // Check if Google is ready
+          if (window.google && window.google.accounts) {
+              try {
+                  google.accounts.id.initialize({
+                      client_id: "109724056179-v1ggq3b91h7jmfa9ivi1etjvq5q5q9ui.apps.googleusercontent.com",
+                      callback: handleGoogleLoginNavbar
+                  });
+                  
+                  google.accounts.id.renderButton(
+                      document.getElementById("google-nav-btn"),
+                      { 
+                          theme: "filled_blue", 
+                          size: "medium", 
+                          type: "standard",
+                          shape: "rectangular",
+                          text: "signin"
+                      }
+                  );
+              } catch (e) {
+                  console.error("Google Render Error:", e);
+              }
+          } else {
+              // Not ready yet? Try again in 100ms (up to 50 times / 5 seconds)
+              attempts++;
+              if (attempts < 10) {
+                  setTimeout(renderGoogleBtn, 100);
+              } else {
+                  // Fallback if Google never loads (e.g. AdBlocker)
+                  document.getElementById("google-nav-btn").innerHTML = 
+                      `<a href="/" class="btn-ghost" style="font-size:14px;">Sign In</a>`;
+              }
+          }
+      };
+
+      // Start the check
+      renderGoogleBtn();
+  }
+}
+
+// Handler for Navbar Login
+function handleGoogleLoginNavbar(response) {
+  try {
+      const data = jwt_decode(response.credential);
+      localStorage.setItem("user", JSON.stringify({
+          name: data.name, 
+          email: data.email, 
+          token: response.credential
+      }));
+      showToast("Signed in successfully!", "success");
+      setTimeout(() => window.location.reload(), 500);
+  } catch (e) {
+      console.error("Login Error", e);
+  }
+}
+
+// ✅ Logout Function
+function logout() {
+  localStorage.removeItem("user");
+  localStorage.removeItem("profile");
+  localStorage.removeItem("currentProfile");
+  localStorage.removeItem("autosave_resume"); 
+
+  window.location.href = "/"; // Redirect to home
 }

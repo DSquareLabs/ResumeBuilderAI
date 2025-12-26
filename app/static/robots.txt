@@ -1,8 +1,12 @@
 User-agent: *
 Allow: /
 Allow: /pricing
-Disallow: /builder
+Allow: /builder
+Allow: /privacy-policy
+Allow: /extra/contact
+
 Disallow: /profile
 Disallow: /api/
+Disallow: /result/
 
 Sitemap: https://myresumematch.com/sitemap.xml

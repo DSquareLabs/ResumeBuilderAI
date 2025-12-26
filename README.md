@@ -72,7 +72,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 4️⃣ Run server
+```
 uvicorn app.main:app --reload
+```
 
 
 Open:

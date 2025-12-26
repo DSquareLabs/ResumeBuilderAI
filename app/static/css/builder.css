@@ -893,3 +893,22 @@ textarea:focus, .modern-select:focus {
   .refine-chips::-webkit-scrollbar {
     display: none;
   }
+
+  #nav-auth-section {
+    display: flex;
+    align-items: center;
+    min-height: 40px; /* Prevents layout jump */
+  }
+  
+  /* Make the user badge look like a nav link but bolder */
+  .user-badge {
+    color: #333;
+    font-weight: 600;
+    margin-right: 15px;
+    text-decoration: none;
+    font-size: 0.9rem;
+  }
+  .user-badge:hover {
+    color: #2563eb;
+    text-decoration: underline;
+  }
