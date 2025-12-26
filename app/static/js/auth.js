@@ -48,32 +48,6 @@ function updateAuthUI() {
         if (heroWelcomeArea) heroWelcomeArea.style.display = 'block';
 
     } else {
-        // --- LOGGED OUT STATE ---
-        if (navAuthSection) {
-             navAuthSection.innerHTML = `
-                <div class="g_id_signin"
-                     data-type="standard"
-                     data-size="medium"
-                     data-theme="filled_blue"
-                     data-text="signin"
-                     data-shape="rectangular"
-                     data-logo_alignment="left">
-                </div>
-            `;
-        }
-        if (window.google && window.google.accounts && window.google.accounts.id) {
-                google.accounts.id.renderButton(
-                    document.getElementById("nav-google-btn"), // The element we just created
-                    { 
-                        theme: "filled_blue", 
-                        size: "medium", 
-                        type: "standard",
-                        text: "signin",
-                        shape: "rectangular",
-                        logo_alignment: "left"
-                    }
-                );
-            }
         
         if (heroLoginArea) heroLoginArea.style.display = 'block';
         if (heroWelcomeArea) heroWelcomeArea.style.display = 'none';
