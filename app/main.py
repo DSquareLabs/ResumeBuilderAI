@@ -59,6 +59,7 @@ app = FastAPI(
 
 class ResumeInput(BaseModel):
     style: str
+    color_hex: str | None = "default"
     resume_text: str
     job_description: str
 
@@ -107,7 +108,7 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     # --- 🧠 SUPERIOR PROMPT ENGINEERING ---
     system_prompt = """
     You are a Senior CSS Architect and Elite Career Strategist. and a Great Resume Writer whoes goal is to optimize resumes for both ATS systems and human recruiters.
-    Your task is to take raw resume data and a job description, and transform it into a visually stunning, ATS-optimized HTML resume.
+    Your task is to take old/raw resume data and a job description, and transform it into a visually stunning, and rewritten to ATS-optimized HTML resume.
     Dont be too formal with wordings like professional summary just keep it simple and straight to the point. which human recruiters will love and ATS systems can easily parse.
 
     🚨 CORE DIRECTIVE: VISUAL STYLE IS PARAMOUNT.
@@ -123,13 +124,13 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     2. "Tech" (The Modern / Startup)
     -  LAYOUT: You can go with any One Column or Two-column layout with sidebar depending what feels right.
         - Use Cool Css Designs and Make sure its visually appealing and modern. (Dont add any background color keep it simple with white but be creative with layout and placement of elements)
-       - COLORS: Light backgrounds with accent colors.
+       
          - TYPOGRAPHY: Modern sans-serif fonts (e.g., Roboto, Open Sans).
        - VIBE: Silicon Valley, Software Engineer, Product Manager.
 
     3. "Creative" (The Designer / Two-Column)
        - LAYOUT: (IMPORTANT) Two-Column Layout (CSS Grid or Flexbox).
-       - COLORS: Use a soft background color for the sidebar. and never ever use a background color. only sidebar color is allowed.
+       - never ever use a background color. only sidebar color is allowed.
        - TYPOGRAPHY: Sans-serif.
        No Over the top designs keep it minimal yet creative. and professional.
        - VIBE: UI/UX Designer, Marketing, Creative Director.
@@ -173,10 +174,22 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     if data.portfolio: profile_lines.append(f"Portfolio: {data.portfolio}")
     profile_info = "\n".join(profile_lines)
 
+    color_instruction = ""
+    if data.color_hex and data.color_hex != "default":
+        color_instruction = f"""
+        The user has selected a CUSTOM ACCENT COLOR: {data.color_hex}
+        - You can implement to use {data.color_hex} for all:
+          * Section Headers (h1, h2, h3)
+          * Bullet points (if colored)
+          * Sidebars background
+          * Horizontal rules (borders)
+          * Links
+        """
+
     user_prompt = f"""
     GENERATE THIS RESUME:
     
-    🔹 SELECTED STYLE: {data.style} (Apply the {data.style} CSS rules!)
+    🔹 SELECTED STYLE: {data.style} (Apply the {data.style} CSS rules!) Make Sure layout is properly followed.
     
     🔹 CANDIDATE INFO:
     {profile_info}
@@ -186,6 +199,8 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     
     🔹 TARGET JOB DESCRIPTION (OPTIMIZE FOR THIS):
     {data.job_description}
+
+    Use the Following Color Instructions: {color_instruction}
     """
 
     try:

@@ -573,7 +573,7 @@ async function generateResume() {
   const resumeText = document.getElementById("resumeText").value.trim();
   const jobDescription = document.getElementById("jobDescription").value.trim();
   const style = document.getElementById("styleSelect")?.value || "harvard";
-
+  const colorHex = document.getElementById("selectedColor").value;
   // ✅ Validation: Empty inputs
   if (!resumeText || !jobDescription) {
     showToast("Please provide both resume text and job description.", "error");
@@ -612,6 +612,7 @@ async function generateResume() {
       },
       body: JSON.stringify({
         style: style,
+        color_hex: colorHex,
         resume_text: resumeText,
         job_description: jobDescription,
 
@@ -1414,46 +1415,122 @@ async function updateCoverLetterWithAI() {
 }
 
 
-/**
- * 📥 DIRECT DOWNLOAD (html2pdf)
- * Uses JavaScript to render the DOM as a PDF file.
- */
+
 function printActiveDocument() {
-    // 1. Identify content
-    let contentId = activeView === 'resume' ? 'output' : 'output-cl';
-    const element = document.getElementById(contentId);
-    
-    // Safety Check
-    if (!element || element.innerText.trim() === "") {
-        showToast("Nothing to download yet!", "error");
-        return;
-    }
-
-    // 2. Show Loading State
-    const btn = document.querySelector('#previewActions .btn-ghost');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="material-icons-round spinning">hourglass_empty</span> Saving...';
-
-    // 3. Configuration
-    const opt = {
-      margin:       0, // We handle margins via CSS padding in .paper-a4
-      filename:     'My_Resume.pdf',
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, letterRendering: true }, 
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    // 4. Generate & Save
-    html2pdf().set(opt).from(element).save().then(() => {
-        // Reset Button
-        btn.innerHTML = originalText;
-        showToast("PDF Downloaded!", "success");
-    }).catch(err => {
-        console.error(err);
-        btn.innerHTML = originalText;
-        showToast("Download failed. Try the Print button.", "error");
-    });
+  // 1. Show print instructions popup first
+  showPrintInstructions();
 }
+
+function showPrintInstructions() {
+  const popup = document.createElement('div');
+  popup.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  popup.innerHTML = `
+    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; text-align: center;">
+      <h3 style="margin-bottom: 15px;">Print Instructions</h3>
+      <p style="margin-bottom: 20px; color: #666;">
+        Make sure to disable headers and footers in the print dialog to remove unnecessary details like URLs and page numbers.
+      </p>
+      <div style="background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: left;">
+        <p style="margin: 0; font-size: 14px;"><strong>How to disable headers/footers:</strong></p>
+        <p style="margin: 5px 0; font-size: 13px;">• <strong>Chrome:</strong> Click "More settings" → Uncheck "Headers and footers"</p>
+        <p style="margin: 5px 0; font-size: 13px;">• <strong>Firefox:</strong> In Print dialog → Page Setup → Margins & Headers/Footers → Set to "Blank"</p>
+        <p style="margin: 5px 0; font-size: 13px;">• <strong>Safari:</strong> Check "Hide headers and footers" option</p>
+      </div>
+      <img src="/static/img/print_options_screenshot.png" alt="Print Options Screenshot" style="width: 300px; height: auto; margin-bottom: 20px; border: 1px solid #ddd;">
+      <button onclick="this.closest('div[style*=position]').remove(); proceedWithPrint();" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+        Got it, continue to print
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+}
+
+function proceedWithPrint() {
+  // 1. Determine which content to print
+  let contentId, title;
+  
+  if (activeView === 'resume') {
+    contentId = 'output';
+    title = 'Resume';
+  } else {
+    contentId = 'output-cl';
+    title = 'Cover Letter';
+  }
+
+  const contentElement = document.getElementById(contentId);
+  
+  // 2. Safety Check
+  const hasEmptyState = contentElement ? contentElement.querySelector('.empty-state') : null;
+  
+  if (!contentElement || hasEmptyState || contentElement.innerText.trim() === "") {
+      showToast(`Your ${title} is not ready yet. Please generate it first.`, "error");
+      return;
+  }
+
+  // 3. Open Print Window
+  const printWindow = window.open("", "_blank");
+  
+  // 4. Write the HTML
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <title>Print ${title}</title>
+        <meta charset="UTF-8">
+        <style>
+          /* RELAXED A4 SIZE: 
+             We removed 'margin: 0' so the browser/printer handles the margins.
+             This prevents content from being cut off on standard printers.
+          */
+          @page {
+            size: A4; 
+          }
+          
+          body {
+            padding: 0;
+            -webkit-print-color-adjust: exact; 
+            print-color-adjust: exact;
+            font-family: sans-serif;
+          }
+
+          /* Content scales to fit the printable area */
+          .paper-a4 {
+            width: 100%;
+            max-width: 210mm;
+            margin: 0 auto;
+            box-shadow: none; 
+          }
+        </style>
+      </head>
+      <body>
+        ${contentElement.innerHTML}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.focus();
+
+  // 5. Trigger Print
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 500);
+}
+
 
 
 /*************************************************
@@ -1657,4 +1734,22 @@ function logout() {
   localStorage.removeItem("autosave_resume"); 
 
   window.location.href = "/"; // Redirect to home
+}
+
+function selectColor(colorCode) {
+    // Update Hidden Input
+    document.getElementById("selectedColor").value = colorCode;
+
+    // Update Visual UI (Active Class)
+    document.querySelectorAll('.color-swatch').forEach(btn => {
+        // Check if this button matches the selected color
+        if (btn.getAttribute('onclick').includes(colorCode)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Auto-Save Draft
+    localStorage.setItem("draft_color", colorCode);
 }
