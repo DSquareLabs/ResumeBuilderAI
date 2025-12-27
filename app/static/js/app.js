@@ -51,7 +51,7 @@ async function loadUserProfile() {
       }
     });
 
-    // 🚨 3. THE FIX: Handle Expired Tokens (401)
+    // 3. THE FIX: Handle Expired Tokens (401)
     if (res.status === 401) {
        console.warn("Token expired. Logging out.");
        showToast("Session expired. Please sign in again.", "error");
@@ -66,7 +66,7 @@ async function loadUserProfile() {
 
     currentProfile = await res.json();
     
-    // --- 🚨 GATEKEEPER LOGIC 🚨 ---
+    // ---  GATEKEEPER LOGIC ---
     
     // Condition: Is this a Valid, Saved User?
     const isValidUser = (currentProfile !== null);
@@ -78,7 +78,7 @@ async function loadUserProfile() {
         // User exists in Google but NOT in Database (New User)
         
         if (window.location.pathname.includes("/builder")) {
-            // 🛑 STOP! You are not allowed here.
+            // STOP! You are not allowed here.
             window.location.href = "/profile"; 
             return; // Stop execution so the curtain never lifts
         }
@@ -99,10 +99,74 @@ async function loadUserProfile() {
   }
 }
 
+function scheduleMobileDesktopNudge() {
+  try {
+    if (window.location.pathname !== "/builder") return;
+    if (!window.matchMedia || !window.matchMedia("(max-width: 1000px)").matches) return;
+    if (localStorage.getItem("hide_desktop_nudge") === "1") return;
+    if (document.getElementById("desktopNudgeOverlay")) return;
+
+    setTimeout(() => {
+      if (!window.matchMedia("(max-width: 1000px)").matches) return;
+      if (localStorage.getItem("hide_desktop_nudge") === "1") return;
+      if (document.getElementById("desktopNudgeOverlay")) return;
+      showMobileDesktopNudge();
+    }, 20000);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function showMobileDesktopNudge() {
+  const overlay = document.createElement("div");
+  overlay.id = "desktopNudgeOverlay";
+  overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10050;display:flex;align-items:center;justify-content:center;padding:18px;";
+
+  const modal = document.createElement("div");
+  modal.style.cssText = "width:100%;max-width:420px;background:#fff;border-radius:14px;padding:18px 16px;box-shadow:0 12px 40px rgba(0,0,0,.25);text-align:left;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;";
+
+  modal.innerHTML = `
+    <div style="font-weight:800;font-size:18px;margin-bottom:6px;color:#111827;">Desktop experience is better</div>
+    <div style="font-size:14px;line-height:1.45;color:#4B5563;margin-bottom:14px;">
+      For the best editing + preview layout, open this builder on a desktop or laptop. You can still continue here on mobile.
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;">
+      <button type="button" id="desktopNudgeDontShow" style="background:transparent;border:1px solid #E5E7EB;color:#111827;padding:10px 12px;border-radius:10px;font-weight:700;cursor:pointer;">Don’t show again</button>
+      <button type="button" id="desktopNudgeContinue" style="background:#2563EB;border:1px solid #2563EB;color:#fff;padding:10px 12px;border-radius:10px;font-weight:800;cursor:pointer;">Continue on mobile</button>
+    </div>
+  `;
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  const btnContinue = document.getElementById("desktopNudgeContinue");
+  if (btnContinue) {
+    btnContinue.addEventListener("click", () => {
+      overlay.remove();
+    });
+  }
+
+  const btnDontShow = document.getElementById("desktopNudgeDontShow");
+  if (btnDontShow) {
+    btnDontShow.addEventListener("click", () => {
+      try {
+        localStorage.setItem("hide_desktop_nudge", "1");
+      } catch (_) {}
+      overlay.remove();
+    });
+  }
+}
+
 window.onload = () => {
   loadUserProfile();
   setupCharacterCounters();
   setupPDFUpload(); // Setup PDF upload handler
+
+  scheduleMobileDesktopNudge();
 
   restoreDrafts();
   setupDraftSaving();
