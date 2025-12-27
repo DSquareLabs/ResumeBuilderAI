@@ -211,7 +211,7 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
                 {"role": "user", "content": user_prompt}
             ],
             temperature=0.7, # Slightly creative to allow for better phrasing
-            max_tokens=6000,
+            max_completion_tokens=6000,
         )
 
         content = response.choices[0].message.content
