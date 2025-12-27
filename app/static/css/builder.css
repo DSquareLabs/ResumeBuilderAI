@@ -502,6 +502,11 @@ textarea:focus,
     padding-bottom: 100px;
   }
 
+  /* Hide ATS hint on mobile */
+  .ats-hint {
+    display: none;
+  }
+
   /* --- EDITOR PANE --- */
   .editor-pane {
     width: 100%;
