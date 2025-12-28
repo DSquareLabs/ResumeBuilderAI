@@ -7,10 +7,18 @@ from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
+from fastapi.responses import Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.profile import router as profile_router
 from app.api.billing import router as billing_router
 from sqlalchemy.orm import Session
+import io
+import re
+
+from bs4 import BeautifulSoup
+from docx import Document
+from docx.shared import Pt
 
 from app.database import engine, Base, get_db
 from app.models.profile import Profile
@@ -70,7 +78,16 @@ class ResumeInput(BaseModel):
     location: str | None = ""
     linkedin: str | None = ""
     portfolio: str | None = ""
-    
+
+class ExportDocxInput(BaseModel):
+    html: str
+    filename: str | None = "document"
+
+
+class ExportWordInput(BaseModel):
+    html: str
+    filename: str | None = "document"
+
 @app.post("/api/generate-resume")
 def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email), db: Session = Depends(get_db)):
     """
@@ -241,6 +258,164 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
         "ats_score": ats_score,
         "credits_left": remaining_credits
     }
+
+
+def _html_to_docx_bytes(html: str) -> bytes:
+    # Minimal cleanup: remove scripts/styles, collapse whitespace
+    html = html or ""
+    html = html.replace("\ufeff", "")
+    soup = BeautifulSoup(html, "html.parser")
+
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+
+    # Prefer the inner resume wrapper if present
+    wrapper = soup.find(id="resume-preview")
+    root = wrapper if wrapper is not None else soup
+
+    doc = Document()
+
+    # Basic default font sizing
+    style = doc.styles["Normal"]
+    if style is not None and style.font is not None:
+        style.font.name = "Calibri"
+        style.font.size = Pt(11)
+
+    def add_runs_from_text(paragraph, text, bold=False):
+        if not text:
+            return
+        run = paragraph.add_run(text)
+        run.bold = bool(bold)
+
+    def handle_node(node):
+        name = getattr(node, "name", None)
+
+        if name in ("h1", "h2", "h3"):
+            level = {"h1": 1, "h2": 2, "h3": 3}[name]
+            text = node.get_text(" ", strip=True)
+            if text:
+                doc.add_heading(text, level=level)
+            return
+
+        if name == "p":
+            p = doc.add_paragraph()
+            for child in node.children:
+                cname = getattr(child, "name", None)
+                if cname in ("strong", "b"):
+                    add_runs_from_text(p, child.get_text(" ", strip=True) + " ", bold=True)
+                elif cname in ("em", "i"):
+                    add_runs_from_text(p, child.get_text(" ", strip=True) + " ", bold=False)
+                else:
+                    add_runs_from_text(p, str(child).strip() + " ", bold=False)
+            return
+
+        if name in ("ul", "ol"):
+            ordered = name == "ol"
+            items = node.find_all("li", recursive=False)
+            for idx, li in enumerate(items, start=1):
+                prefix = f"{idx}. " if ordered else "\u2022 "
+                text = li.get_text(" ", strip=True)
+                if text:
+                    doc.add_paragraph(prefix + text)
+            return
+
+        if name == "br":
+            doc.add_paragraph("")
+            return
+
+        # Default: walk children
+        for child in getattr(node, "children", []):
+            handle_node(child)
+
+    # Walk top-level children and convert
+    for child in getattr(root, "children", []):
+        handle_node(child)
+
+    bio = io.BytesIO()
+    doc.save(bio)
+    return bio.getvalue()
+
+
+def _html_to_word_doc_html(html: str) -> str:
+    html = html or ""
+    html = html.replace("\ufeff", "")
+    soup = BeautifulSoup(html, "html.parser")
+
+    for tag in soup(["script"]):
+        tag.decompose()
+
+    wrapper = soup.find(id="resume-preview")
+    content_node = wrapper if wrapper is not None else soup
+
+    style_blocks = soup.find_all("style")
+    css = "\n".join([sb.get_text("\n", strip=False) for sb in style_blocks if sb])
+
+    body_html = "".join([str(x) for x in content_node.contents])
+
+    # Word opens HTML as a .doc when served with application/msword.
+    # Keep the CSS inline in <style> so Word can render it.
+    return (
+        "<!DOCTYPE html>\n"
+        "<html>\n"
+        "<head>\n"
+        "<meta charset=\"UTF-8\">\n"
+        "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n"
+        "<style>\n"
+        f"{css}\n"
+        "</style>\n"
+        "</head>\n"
+        "<body>\n"
+        f"{body_html}\n"
+        "</body>\n"
+        "</html>\n"
+    )
+
+
+@app.post("/api/export-docx")
+def export_docx(payload: ExportDocxInput, email: str = Depends(get_verified_email)):
+    # Auth is enforced; content comes from the user's current editor state
+    if not payload.html or not payload.html.strip():
+        raise HTTPException(status_code=400, detail="No HTML provided")
+
+    safe_name = (payload.filename or "document").strip()
+    safe_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", safe_name)[:60] or "document"
+
+    try:
+        docx_bytes = _html_to_docx_bytes(payload.html)
+    except Exception as e:
+        print(f"DOCX export error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to export DOCX")
+
+    headers = {
+        "Content-Disposition": f'attachment; filename="{safe_name}.docx"'
+    }
+
+    return StreamingResponse(
+        io.BytesIO(docx_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers=headers,
+    )
+
+
+@app.post("/api/export-word")
+def export_word(payload: ExportWordInput, email: str = Depends(get_verified_email)):
+    if not payload.html or not payload.html.strip():
+        raise HTTPException(status_code=400, detail="No HTML provided")
+
+    safe_name = (payload.filename or "document").strip()
+    safe_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", safe_name)[:60] or "document"
+
+    try:
+        word_html = _html_to_word_doc_html(payload.html)
+    except Exception as e:
+        print(f"Word export error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to export Word")
+
+    headers = {
+        "Content-Disposition": f'attachment; filename="{safe_name}.doc"'
+    }
+
+    return Response(content=word_html, media_type="application/msword", headers=headers)
     
 @app.get("/dx")
 def home():

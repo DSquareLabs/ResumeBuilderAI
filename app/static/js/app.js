@@ -1486,6 +1486,126 @@ function printActiveDocument() {
   showPrintInstructions();
 }
 
+function showWordExportWarning() {
+  const popup = document.createElement('div');
+  popup.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `;
+  
+  popup.innerHTML = `
+    <div style="background: white; padding: 25px; border-radius: 8px; max-width: 400px; text-align: center;">
+      <h3 style="margin-bottom: 10px; color: #007bff;">Word Export Info</h3>
+      <p style="margin-bottom: 15px; color: #666; font-size: 14px;">
+        Word documents work best with single-column layouts. Two-column designs might look different in Word.
+      </p>
+      <p style="margin-bottom: 15px; color: #666; font-size: 14px; font-style: italic;">
+        Words are not optimized for designs.
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button onclick="this.closest('div[style*=position]').remove();" style="background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+          Cancel
+        </button>
+        <button onclick="this.closest('div[style*=position]').remove(); proceedWithWordExport();" style="background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;">
+          Export Anyway
+        </button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+}
+
+function proceedWithWordExport() {
+  exportActiveDocumentDocx();
+}
+
+async function exportActiveDocumentDocx() {
+  try {
+    if (!currentUser || !currentUser.token) {
+      showToast("Please sign in to export.", "error");
+      return;
+    }
+
+    let contentId, title;
+    if (activeView === 'resume') {
+      contentId = 'output';
+      title = 'resume';
+    } else {
+      contentId = 'output-cl';
+      title = 'cover_letter';
+    }
+
+    const contentElement = document.getElementById(contentId);
+    const hasEmptyState = contentElement ? contentElement.querySelector('.empty-state') : null;
+    if (!contentElement || hasEmptyState || contentElement.innerText.trim() === "") {
+      showToast(`Your ${title.replace('_', ' ')} is not ready yet. Please generate it first.`, "error");
+      return;
+    }
+
+    showToast("Preparing Word document...", "info");
+
+    const html = contentElement.innerHTML;
+    const filename = `${title}_${new Date().toISOString().slice(0, 10)}`;
+
+    // Prefer high-fidelity Word export (HTML+CSS as .doc)
+    let res = await fetch('/api/export-word', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${currentUser.token}`
+      },
+      body: JSON.stringify({ html, filename })
+    });
+
+    // Fallback to DOCX if needed
+    if (!res.ok) {
+      res = await fetch('/api/export-docx', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify({ html, filename })
+      });
+    }
+
+    if (!res.ok) {
+      let msg = 'Failed to export Word document.';
+      try {
+        const err = await res.json();
+        msg = err.detail || msg;
+      } catch (_) {}
+      showToast(msg, 'error');
+      return;
+    }
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const extension = res.headers.get('content-type') === 'application/msword' ? 'doc' : 'docx';
+    a.download = `${filename}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    showToast("Word document downloaded!", "success");
+  } catch (e) {
+    console.error(e);
+    showToast("Word export failed. Please try again.", "error");
+  }
+}
+
 function showPrintInstructions() {
   const popup = document.createElement('div');
   popup.style.cssText = `
@@ -1790,8 +1910,6 @@ function handleGoogleLoginNavbar(response) {
       console.error("Login Error", e);
   }
 }
-
-
 
 function selectColor(colorCode) {
     // Update Hidden Input

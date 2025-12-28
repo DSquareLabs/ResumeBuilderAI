@@ -8,3 +8,5 @@ google-auth-oauthlib
 sqlalchemy
 psycopg2-binary
 stripe
+python-docx
+beautifulsoup4

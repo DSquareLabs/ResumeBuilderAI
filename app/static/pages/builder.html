@@ -120,7 +120,7 @@
             <span><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">palette</span>
               Color Reference</span>
           </label>
-          <select id="styleSelect" class="modern-select" for="styleSelect">
+          <select id="styleSelect" class="modern-select" for="styleSelect" onchange="if(this.value==='Creative') document.querySelector('.word-btn').style.display='none'; else document.querySelector('.word-btn').style.display='inline-flex';">
             <option value="Harvard">Harvard Standard (Clean)</option>
             <option value="Tech">Tech Modern (Bold)</option>
             <option value="Creative">Creative (Two-Column)</option>
@@ -221,6 +221,9 @@
             </div>
             <span>ATS Score</span>
           </div>
+          <button class="btn-ghost word-btn" onclick="showWordExportWarning()">
+            <span class="material-icons-round">description</span> Word
+          </button>
           <button class="btn-ghost print-btn" onclick="printActiveDocument()">
             <span class="material-icons-round">download</span> PDF
           </button>
