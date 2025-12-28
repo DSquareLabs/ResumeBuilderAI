@@ -27,6 +27,13 @@ class CoverLetterInput(BaseModel):
     hiring_manager: str | None = "Hiring Manager"
     motivation: str | None = "" # "Why this company?"
     highlight: str | None = ""  # "Special Story/Experience"
+    color_hex: str | None = "default"  # Custom accent color
+    
+    # User profile data (optional - will use stored profile if not provided)
+    full_name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    location: str | None = None
 
 @router.post("/generate-cover-letter")
 def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email), db: Session = Depends(get_db)):
@@ -94,12 +101,23 @@ def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email)
     manager_name = data.hiring_manager.strip() if data.hiring_manager else "Hiring Manager"
     if not manager_name: manager_name = "Hiring Manager"
 
+    # Build candidate profile string (same as resume generation)
+    profile_lines = []
+    if data.full_name: profile_lines.append(f"Name: {data.full_name}")
+    if email: profile_lines.append(f"Email: {email}")
+    if data.phone: profile_lines.append(f"Phone: {data.phone}")
+    if data.location: profile_lines.append(f"Location: {data.location}")
+    profile_info = "\n".join(profile_lines)
+
     user_prompt = f"""
     TARGET JOB DESCRIPTION: 
     {data.job_description}
     
     CANDIDATE RESUME: 
     {data.resume_text}
+    
+    CANDIDATE PROFILE INFO:
+    {profile_info}
     
     ---
     USER INPUTS (USE THESE TO DRIVE THE NARRATIVE):

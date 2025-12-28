@@ -647,10 +647,9 @@ textarea:focus,
 
   .paper-a4 {
     width: 95%;
-    /* Fit screen width */
     min-height: 400px;
     margin: 0 auto 20px auto;
-    padding: 20px;
+    padding: 80px 0;
     font-size: 14px;
   }
 

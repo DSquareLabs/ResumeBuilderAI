@@ -1335,8 +1335,11 @@ async function submitCoverLetterGen() {
                 job_description: jobDescription,
                 hiring_manager: manager,
                 motivation: motivation,
-                highlight: highlight
+                highlight: highlight,
                 // ✅ NO email field - it comes from JWT token
+                full_name: currentProfile.full_name || currentUser.name || "",
+                phone: currentProfile.phone || "",
+                location: currentProfile.location || ""
             })
         });
 
