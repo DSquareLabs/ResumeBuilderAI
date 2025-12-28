@@ -111,6 +111,38 @@ ALLOWED_ROLES = [
     "graphic-designer", "writer"
 ]
 
+STYLE_DESCRIPTIONS = {
+    "harvard": "classic, ATS-friendly design preferred by Ivy League recruiters and top consulting firms",
+    "tech": "clean, modern layout optimized for software engineers, developers, and startups",
+    "creative": "unique, two-column layout perfect for designers, marketers, and portfolio-heavy roles",
+    "minimal": "distraction-free, simple design that focuses purely on your experience and results"
+}
+
+@app.get("/{style}-resume-template")
+def style_landing_page(request: Request, style: str):
+    # Security: Only allow styles you actually have
+    # If user types /stupid-resume-template, they get 404
+    if style not in STYLE_DESCRIPTIONS:
+        raise HTTPException(status_code=404, detail="Style template not found")
+        
+    desc = STYLE_DESCRIPTIONS[style]
+    clean_style = style.title()
+    
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        # 🟢 SEO TITLE: "Free Harvard Resume Template..."
+        "title": f"Free {clean_style} Resume Template | AI Builder",
+        
+        # 🟢 META DESCRIPTION: Unique for each style
+        "description": f"Build a {clean_style} style resume instantly. A {desc}. Export to PDF for free.",
+        
+        # 🟢 H1: The Big Promise
+        "h1_text": f"The Ultimate {clean_style} Resume Template",
+        
+        # 🟢 SUBTEXT: Why this specific style matters
+        "hero_subtext": f"Don't struggle with formatting. Generate a perfect {clean_style} resume that recruiters love and ATS systems can read."
+    })
+
 @app.get("/resume-for-{job_role}")
 def dynamic_landing_page(request: Request, job_role: str):
     if job_role not in ALLOWED_ROLES:

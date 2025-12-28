@@ -34,5 +34,19 @@ for role in roles:
   </url>"""
     print(entry)
 
+
 print("")
 print("")
+
+styles = ["harvard", "tech", "creative", "minimal"]
+print(f"Adding {len(styles)} style routes...")
+for style in styles:
+    full_url = f"https://myresumematch.com/{style}-resume-template"
+    
+    entry = f"""
+  <url>
+    <loc>{full_url}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.82</priority>
+  </url>"""
+    print(entry)
