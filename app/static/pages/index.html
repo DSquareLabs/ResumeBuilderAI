@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Free AI Resume Builder from Job Descriptions | ResumeAI</title>
+    <title>{{ title }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
 
-    <meta name="description" content="Generate ATS-friendly resumes and cover letters to specific job descriptions instantly. Use our free AI tool to improve and refine old CVs and rank higher for jobs." />
+    <meta name="description" content="{{ description }}" />
     <meta name="keywords" content="AI resume builder, generate cover letter from job description, free resume maker, fix my CV, ATS optimization, AI career tool" />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://myresumematch.com/" />
@@ -36,7 +36,7 @@
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      "name": "ResumeAI",
+      "name": "ResumeAI Job Matcher",
       "applicationCategory": "BusinessApplication",
       "operatingSystem": "Web",
       "offers": {
@@ -98,12 +98,10 @@
     🎁 Gift: Get 5 Credits Free on Sign Up
   </span>
           <h1>
-            Generate AI Resumes & Cover Letters
+            {{ h1_text }}
             <span class="text-gradient">From Job Descriptions.</span>
           </h1>
-          <p class="hero-subtext">
-            Don't just update your old CV optimize it. Match it with <strong>Job Description</strong> with AI.
-          </p>
+          <p class="hero-subtext">{{ hero_subtext }}</p>
 
           <div class="hero-stats" aria-label="Product highlights">
             <div class="hero-stat">

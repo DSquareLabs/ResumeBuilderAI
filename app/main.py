@@ -24,6 +24,9 @@ from app.database import engine, Base, get_db
 from app.models.profile import Profile
 from app.models.payment import Payment
 
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
+
 from app.dependencies import get_verified_email
 
 Base.metadata.create_all(bind=engine)
@@ -45,6 +48,7 @@ load_dotenv()
 client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
 
 app = FastAPI()
+templates = Jinja2Templates(directory="app/static/pages")
 
 origins = [
     "https://myresumematch.com",
@@ -87,6 +91,40 @@ class ExportDocxInput(BaseModel):
 class ExportWordInput(BaseModel):
     html: str
     filename: str | None = "document"
+
+ALLOWED_ROLES = [
+    # Tech
+    "software-engineer", "frontend-developer", "backend-developer", "full-stack-developer",
+    "data-scientist", "product-manager", "ui-ux-designer", "devops-engineer", "qa-engineer",
+    
+    # Healthcare (High volume)
+    "nurse", "registered-nurse", "medical-assistant", "dental-assistant", "pharmacist",
+    "physical-therapist",
+    
+    # Business & Admin
+    "administrative-assistant", "customer-service-representative", "project-manager",
+    "marketing-manager", "accountant", "sales-representative", "human-resources-manager",
+    "business-analyst", "executive-assistant",
+    
+    # Service & General
+    "teacher", "server", "bartender", "driver", "receptionist", "electrician",
+    "graphic-designer", "writer"
+]
+
+@app.get("/resume-for-{job_role}")
+def dynamic_landing_page(request: Request, job_role: str):
+    if job_role not in ALLOWED_ROLES:
+        raise HTTPException(status_code=404, detail="Job role not found")
+    
+    clean_role = job_role.replace("-", " ").title()
+   
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "title": f"Free AI Resume Builder for {clean_role}s | Match JD",
+        "description": f"Instantly tailor your {clean_role} resume to the job description. Increase ATS matching score for {clean_role} jobs for free.",
+        "h1_text": f"Generate Resume and Letters for {clean_role} ",
+        "hero_subtext": f"Stop applying blindly. Paste the {clean_role} job description and let AI optimize your CV."
+    })
 
 @app.post("/api/generate-resume")
 def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email), db: Session = Depends(get_db)):
@@ -428,8 +466,14 @@ def health_check():
 # Page Routes
 
 @app.get("/")
-def login_page():
-    return FileResponse("app/static/pages/index.html")
+def login_page(request: Request):
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "title": "Free AI Resume Builder from Job Descriptions | ResumeAI",
+        "description": "Generate ATS-friendly resumes and cover letters...",
+        "h1_text": "Generate AI Resumes & Cover Letters ",
+        "hero_subtext": "Don't just update your old CV optimize it. Match it with Job Description with AI."
+    })
 
 @app.get("/profile")
 def profile_page():
@@ -471,6 +515,12 @@ from app.api.cover_letter import router as cover_letter_router
 app.include_router(cover_letter_router)
 
 # Custom 404 Error Handler
+@app.exception_handler(StarletteHTTPException)
+async def custom_http_exception_handler(request, exc):
+    if exc.status_code == 404:
+        return FileResponse("app/static/pages/extra/404.html", status_code=404)
+    raise exc
+
 @app.exception_handler(StarletteHTTPException)
 async def custom_http_exception_handler(request, exc):
     if exc.status_code == 404:

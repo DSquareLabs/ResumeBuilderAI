@@ -10,3 +10,4 @@ psycopg2-binary
 stripe
 python-docx
 beautifulsoup4
+jinja2
