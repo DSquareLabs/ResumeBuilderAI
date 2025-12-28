@@ -371,11 +371,6 @@ textarea:focus,
   word-wrap: break-word;
 }
 
-/* Cover letter specific: no padding since it has its own margins */
-#output-cl {
-  padding: 35px 60px;
-}
-
 /* Material Icon Alignment Fix */
 .material-icons-round {
   vertical-align: middle;

@@ -81,7 +81,7 @@ def generate_cl(data: CoverLetterInput, email: str = Depends(get_verified_email)
       - NO background colors. NO creative elements. Just text on paper.
 
     ✅ CONTENT RULES (THE STORY):
-    0. Write the users details in a professional header at the top (name, email, phone).
+    0. Write the users details in a professional header at the top (name, email, phone). Make Sure to add today's date.
     1. **Salutation:** Use the provided Hiring Manager name.
     2. **The Hook (Paragraph 1):** Why them? Use the user's 'Motivation' input to create a genuine connection to the company.
     3. **The 'Special Experience' (Paragraph 2):** This is the core. Use the user's 'Highlight' input. 
