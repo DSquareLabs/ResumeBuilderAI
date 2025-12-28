@@ -229,20 +229,35 @@ function showConfirmDialog(title, message, confirmText = "Confirm", cancelText =
 window.showConfirmDialog = showConfirmDialog;
 
 function logout() {
-      localStorage.removeItem("user");
-      localStorage.removeItem("profile");
-      localStorage.removeItem("currentProfile");
+  // Clear all user-related data
+  localStorage.removeItem("user");
+  localStorage.removeItem("profile");
+  localStorage.removeItem("currentProfile");
 
-      localStorage.removeItem("autosave_resume");
-      localStorage.removeItem("autosave_cl");
-      localStorage.removeItem("autosave_score");
+  // Clear all auto-saved content
+  localStorage.removeItem("autosave_resume");
+  localStorage.removeItem("autosave_cl");
+  localStorage.removeItem("autosave_score");
 
-      window.location.href = "/";
-    }
+  // Clear all draft data
+  localStorage.removeItem("draft_resumeText");
+  localStorage.removeItem("draft_jobDescription");
+  localStorage.removeItem("draft_styleSelect");
+  localStorage.removeItem("draft_color");
+
+  // Clear UI preferences
+  localStorage.removeItem("hide_desktop_nudge");
+
+  // Reset global variables
+  if (typeof currentUser !== 'undefined') currentUser = null;
+  if (typeof currentProfile !== 'undefined') currentProfile = null;
+
+  window.location.href = "/";
+}
 
 window.addEventListener('storage', function(event) {
-    if (event.key === 'user' && !event.newValue) {
-        console.log("Logged out in another tab. Redirecting...");
-        window.location.href = '/'; 
-    }
+  if (event.key === 'user' && !event.newValue) {
+    console.log("Logged out in another tab. Redirecting...");
+    window.location.href = '/'; 
+  }
 });

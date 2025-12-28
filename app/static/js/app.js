@@ -1791,15 +1791,7 @@ function handleGoogleLoginNavbar(response) {
   }
 }
 
-// ✅ Logout Function
-function logout() {
-  localStorage.removeItem("user");
-  localStorage.removeItem("profile");
-  localStorage.removeItem("currentProfile");
-  localStorage.removeItem("autosave_resume"); 
 
-  window.location.href = "/"; // Redirect to home
-}
 
 function selectColor(colorCode) {
     // Update Hidden Input
