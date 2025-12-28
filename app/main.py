@@ -111,6 +111,13 @@ ALLOWED_ROLES = [
     "teacher", "server", "bartender", "driver", "receptionist", "electrician",
     "graphic-designer", "writer"
 ]
+try:
+    import os
+    with open(os.path.join(os.path.dirname(__file__), "seo_descriptions.json"), "r") as f:
+        ROLE_DESCRIPTIONS = json.load(f)
+except FileNotFoundError:
+    print("⚠️ Warning: seo_descriptions.json not found. Using defaults.")
+    ROLE_DESCRIPTIONS = {}
 
 STYLE_DESCRIPTIONS = {
     "harvard": "classic, ATS-friendly design preferred by Ivy League recruiters and top consulting firms",
@@ -150,13 +157,14 @@ def dynamic_landing_page(request: Request, job_role: str):
         raise HTTPException(status_code=404, detail="Job role not found")
     
     clean_role = job_role.replace("-", " ").title()
+    seo_text = ROLE_DESCRIPTIONS.get(job_role, f"Stop applying blindly. Paste the {clean_role} job description and let AI optimize your CV.")
    
     return templates.TemplateResponse("index.html", {
         "request": request,
         "title": f"Free AI Resume Builder for {clean_role}s | Match JD",
-        "description": f"Instantly tailor your {clean_role} resume to the job description. Increase ATS matching score for {clean_role} jobs for free.",
+        "description": f"Build a {clean_role} resume that passes ATS. {seo_text}",
         "h1_text": f"Generate Resume and Letters for {clean_role} ",
-        "hero_subtext": f"Stop applying blindly. Paste the {clean_role} job description and let AI optimize your CV."
+        "hero_subtext": seo_text
     })
 
 @app.post("/api/generate-resume")
