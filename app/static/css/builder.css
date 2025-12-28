@@ -42,7 +42,7 @@ body {
   display: flex;
   height: calc(100vh - var(--nav-height));
   width: 100%;
-  flex-direction: column;
+  overflow: hidden;
 }
 
 /* --- 3. Left Pane: Command Center --- */
@@ -482,10 +482,6 @@ textarea:focus,
   background: #FEF2F2;
 }
 
-/* Hide Word export for Creative (two-column) style */
-body.style-creative .word-btn {
-  display: none !important;
-}
 
 /* --- MOBILE OPTIMIZATIONS (CAPITALIST MODE) --- */
 @media (max-width: 1000px) {
@@ -493,15 +489,20 @@ body.style-creative .word-btn {
     display: none;
   }
 
-  .word-btn {
-    display: inline-flex;
-  }
-
   /* 1. Reset Global Layout for Vertical Scroll */
   body {
     overflow-y: auto !important;
     height: auto !important;
     background-color: var(--bg-body);
+  }
+
+  .studio-container {
+    flex-direction: column;
+    height: auto !important;
+    overflow: visible !important;
+    width: 100%;
+    /* Add padding bottom so content isn't hidden behind the fixed dock */
+    padding-bottom: 100px;
   }
 
   /* Hide ATS hint on mobile */
@@ -614,7 +615,7 @@ body.style-creative .word-btn {
     padding: 0 20px;
 
     flex-direction: column;
-    gap: 7px;
+    gap : 7px;
     left: auto;
     top: auto;
   }
@@ -656,7 +657,6 @@ body.style-creative .word-btn {
     margin: 0 auto 20px auto;
     padding: 20px;
     font-size: 14px;
-    margin-bottom: 90px;
   }
 
   /* --- REFINE BAR --- */

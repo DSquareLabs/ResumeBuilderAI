@@ -554,14 +554,19 @@ function startGenerate(generationType = 'resume') {
   
   // Set button text based on type
   if (generationType === 'resume') {
-    btn.innerHTML = '<span class="material-icons-round">hourglass_empty</span> Generating Resume...';
+    btn.innerHTML = '<span class="material-icons-round spinning">autorenew</span> Generating Resume...';
   } else if (generationType === 'cover-letter') {
-    btn.innerHTML = '<span class="material-icons-round">hourglass_empty</span> Generating Cover Letter...';
+    btn.innerHTML = '<span class="material-icons-round spinning">autorenew</span> Generating Cover Letter...';
   } else {
-    btn.innerHTML = '<span class="material-icons-round">hourglass_empty</span> Generating...';
+    btn.innerHTML = '<span class="material-icons-round spinning">autorenew</span> Generating...';
   }
   
   const overlay = document.getElementById('loadingOverlay');
+  if (!overlay) {
+    // Don't hard-crash generation if overlay markup is missing.
+    return;
+  }
+
   overlay.classList.add('show');
   
   // Update loading text
@@ -589,7 +594,9 @@ function finishGenerate() {
   updateGenerateButtonText(activeView);
   
   const overlay = document.getElementById('loadingOverlay');
-  overlay.classList.remove('show');
+  if (overlay) {
+    overlay.classList.remove('show');
+  }
   
   // Stop tip rotation
   stopTipRotation();
@@ -601,6 +608,7 @@ function startTipRotation() {
   stopTipRotation(); // Clear any existing interval
   
   const overlay = document.getElementById('loadingOverlay');
+  if (!overlay) return;
   let tipEl = overlay.querySelector('.loading-tip');
   
   if (!tipEl) {
@@ -713,7 +721,6 @@ async function generateResume() {
     document.getElementById("output").innerHTML = data.resume_html;
     document.getElementById("output").contentEditable = true;
 
-
     // ATS Score
     if (data.ats_score !== undefined) {
       const atsScoreEl = document.getElementById("atsScore");
@@ -734,8 +741,6 @@ async function generateResume() {
     showToast("Resume generated successfully!", "success");  
     finishGenerate();
 
-    document.getElementById("output").innerHTML = data.resume_html;
-    
     localStorage.setItem("autosave_resume", data.resume_html);
     if(data.ats_score) localStorage.setItem("autosave_score", data.ats_score);
 
