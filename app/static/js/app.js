@@ -10,6 +10,30 @@ const CHAR_LIMITS = {
   cover_letter_extra: 1000
 };
 
+let currentPhotoBase64 = null;
+
+function handlePhotoUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { // 2MB Limit
+    showToast("Image is too large (Max 2MB)", "error");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentPhotoBase64 = e.target.result;
+    document.getElementById('photoPreview').src = currentPhotoBase64;
+    document.getElementById('photoPreviewContainer').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto() {
+  currentPhotoBase64 = null;
+  document.getElementById('photoUpload').value = "";
+  document.getElementById('photoPreviewContainer').style.display = 'none';
+}
+
 // PDF Extraction Constants
 const PDF_CHAR_LIMIT = 6000;
 const MAX_PDF_PAGES = 5; // Limit extraction to first 5 pages
@@ -689,7 +713,7 @@ async function generateResume() {
         color_hex: colorHex,
         resume_text: resumeText,
         job_description: jobDescription,
-
+        has_photo: !!currentPhotoBase64,
         // profile data (NO email field - it comes from JWT token)
         full_name: currentProfile.full_name || currentUser.name || "",
         phone: currentProfile.phone || "",
@@ -700,6 +724,19 @@ async function generateResume() {
     });
 
     const data = await response.json();
+
+    if (data.resume_html && currentPhotoBase64) {
+        // Create a temp container to manipulate HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = data.resume_html;
+        
+        // Find the placeholder image the AI created
+        const img = tempDiv.querySelector('#resume-photo');
+        if (img) {
+            img.src = currentPhotoBase64;
+        }
+        data.resume_html = tempDiv.innerHTML;
+    }
 
     if (!response.ok || !data.resume_html) {
       const msg = data.detail || "Failed to generate resume";
@@ -734,10 +771,7 @@ async function generateResume() {
 
     document.getElementById("output").scrollIntoView({ behavior: "smooth" });
 
-    const refineBar = document.getElementById("aiRefineBar");
-    if (refineBar) {
-        refineBar.style.display = "block"; 
-    }
+    document.getElementById("aiRefineBar").style.display = "block";
     showToast("Resume generated successfully!", "success");  
     finishGenerate();
 
@@ -953,21 +987,15 @@ async function updateResumeWithAI() {
   const inputEl = document.querySelector('.refine-input');
   const instruction = inputEl.value.trim();
   
-  if (!instruction) return; // Don't send empty requests
+  if (!instruction) return;
 
-  // ✅ Character limit validation
-  if (instruction.length > CHAR_LIMITS.ask_ai_adjust) {
-    showToast(`Your instruction exceeds ${CHAR_LIMITS.ask_ai_adjust} characters. Please be more concise.`, "error");
-    return;
-  }
-
-  // 1. Credit Check (0.5 Credits)
+  // 1. Credit Check
   if (!currentProfile || currentProfile.credits < 0.5) {
     showCreditPopup();
     return;
   }
 
-  // 2. UI Loading State
+  // UI Loading State
   const btn = document.querySelector('.btn-refine-send');
   const originalIcon = btn.innerHTML;
   btn.innerHTML = '<span class="material-icons-round spinning">hourglass_empty</span>';
@@ -975,22 +1003,35 @@ async function updateResumeWithAI() {
   inputEl.disabled = true;
 
   try {
-    const currentHTML = document.getElementById('output').innerHTML;
+    // 🟢 OPTIMIZATION: STRIP IMAGE PAYLOAD
+    let currentHTML = document.getElementById('output').innerHTML;
+    
+    // Create a temp DOM to manipulate (without affecting the screen yet)
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = currentHTML;
+    
+    // Find the heavy image and replace with a placeholder text to save bandwidth
+    const img = tempDiv.querySelector('img[id="resume-photo"]') || tempDiv.querySelector('.profile-photo');
+    if (img) {
+        img.src = "PLACEHOLDER_PHOTO_MARKER"; 
+    }
+    const lightweightHTML = tempDiv.innerHTML; // <--- Send THIS, not the big one
+
     const jobDescription = document.getElementById("jobDescription").value.trim();
     const currentScoreEl = document.getElementById("atsScore");
     const currentScore = currentScoreEl ? (parseFloat(currentScoreEl.innerText) || 0) : 0;
-    // 3. Send to Backend
-    // 🔒 SECURE: No email in body, use JWT token
+
+    // 2. Send Lightweight Request
     const response = await fetch("/api/refine-resume", { 
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${currentUser.token}` // 🔒 SECURE: JWT token
+        "Authorization": `Bearer ${currentUser.token}`
       },
       body: JSON.stringify({
-        html: currentHTML,
+        html: lightweightHTML, 
         instruction: instruction,
-        job_description: jobDescription, // ✅ Sending JD
+        job_description: jobDescription,
         current_ats_score: currentScore
       })
     });
@@ -998,7 +1039,6 @@ async function updateResumeWithAI() {
     const data = await response.json();
 
     if (!response.ok) {
-      // Check if it's a credit error
       if (response.status === 402) {
         showCreditPopup();
         return;
@@ -1006,26 +1046,40 @@ async function updateResumeWithAI() {
       throw new Error(data.detail || data.error || "Failed to update");
     }
 
-    if (!data.updated_html) {
-      throw new Error("No updated content received");
+    if (!data.updated_html) throw new Error("No updated content received");
+
+    // 🟢 RESTORE IMAGE (Stitch it back in)
+    let finalHtml = data.updated_html;
+    
+    // If we have a photo in memory, inject it back into the AI's result
+    if (currentPhotoBase64) {
+        const resultDiv = document.createElement('div');
+        resultDiv.innerHTML = finalHtml;
+        
+        // The AI preserves the <img> tag, so we just fill the src back in
+        const resImg = resultDiv.querySelector('img') || resultDiv.querySelector('#resume-photo');
+        if (resImg) {
+            resImg.src = currentPhotoBase64;
+            // Ensure ID is correct for future updates
+            resImg.id = "resume-photo"; 
+        }
+        finalHtml = resultDiv.innerHTML;
     }
 
-    // 4. Update the Resume in DOM
+    // 3. Update DOM
     const outputEl = document.getElementById('output');
-    outputEl.innerHTML = data.updated_html;
-    outputEl.contentEditable = true; // Keep editing enabled
+    outputEl.innerHTML = finalHtml;
+    outputEl.contentEditable = true;
     
-    // 5. Update Credits (from atomic backend operation)
+    // 4. Update Credits & Score
     currentProfile.credits = data.credits_left;
     const creditEl = document.getElementById("creditCount");
-    if (creditEl) {
-      creditEl.innerText = currentProfile.credits;
-    }
+    if (creditEl) creditEl.innerText = currentProfile.credits;
 
     if (data.ats_score !== undefined && data.ats_score !== null) {
         const atsScoreEl = document.getElementById("atsScore");
         if (atsScoreEl) {
-             const numericScore = (typeof data.ats_score === 'number') ? data.ats_score : (parseFloat(data.ats_score) || 0);
+             const numericScore = parseFloat(data.ats_score) || 0;
              atsScoreEl.innerText = numericScore;
              
              // Update Visuals
@@ -1033,34 +1087,28 @@ async function updateResumeWithAI() {
              atsScoreEl.parentElement.className = `score-circle ${level}`;
              if (typeof updateGauge === "function") updateGauge(numericScore);
              
-             // Auto-save
              localStorage.setItem("autosave_score", numericScore);
         }
-        showToast(`Updated! (New Score: ${data.ats_score})`, "success");
+        showToast(`Updated! (Score: ${data.ats_score})`, "success");
     } else {
         showToast("Resume updated successfully!", "success");
     }
 
-    // 6. Success Feedback
-    inputEl.value = ''; // Clear input
-    btn.style.background = "#10B981"; // Green flash
-    setTimeout(() => { 
-        btn.style.background = ""; // Reset color
-    }, 1000);
+    // Reset UI
+    inputEl.value = ''; 
+    btn.style.background = "#10B981"; 
+    setTimeout(() => { btn.style.background = ""; }, 1000);
 
   } catch (err) {
     console.error("Refine error:", err);
     showToast("Error: " + err.message, "error");
   } finally {
-    // Reset UI
     btn.innerHTML = originalIcon;
     btn.disabled = false;
     inputEl.disabled = false;
     inputEl.focus();
   }
 }
-
-
 /*************************************************
  * MOBILE RESPONSIVENESS & UI ADJUSTMENTS
  * *************************************************/
@@ -1937,4 +1985,33 @@ function selectColor(colorCode) {
 
     // Auto-Save Draft
     localStorage.setItem("draft_color", colorCode);
+}
+/**
+ * VISUAL GAUGE UPDATER
+ * Updates the CSS conic-gradient for the ATS score circle
+ */
+function updateGauge(score) {
+  const circle = document.querySelector('.score-circle');
+  if (!circle) return;
+
+  // 1. Sanitize input
+  let safeScore = parseInt(score) || 0;
+  if (safeScore < 0) safeScore = 0;
+  if (safeScore > 100) safeScore = 100;
+
+  // 2. Calculate degrees (100 score = 360 degrees)
+  const deg = Math.round(safeScore * 3.6);
+
+  // 3. Set the CSS variable that controls the gradient
+  circle.style.setProperty('--score-deg', `${deg}deg`);
+
+  // 4. Update Color Class for the text/border colors
+  circle.classList.remove('low', 'medium', 'high');
+  if (safeScore >= 80) {
+    circle.classList.add('high');   // Green
+  } else if (safeScore >= 60) {
+    circle.classList.add('medium'); // Orange
+  } else {
+    circle.classList.add('low');    // Red
+  }
 }

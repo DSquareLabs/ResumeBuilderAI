@@ -75,7 +75,7 @@ class ResumeInput(BaseModel):
     color_hex: str | None = "default"
     resume_text: str
     job_description: str
-
+    has_photo: bool = False
     # User profile data
     full_name: str
     email: str | None = ""
@@ -200,12 +200,23 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
         remaining_credits = deduct_credit_atomic(db, email, GENERATE_COST)
     except HTTPException as e:
         raise e
+
+    print(data.has_photo)
+    photo_instruction = ""
+    if data.has_photo:
+        photo_instruction = """
+        IMPORTANT: The user has uploaded a profile photo. so make sure to include it in the resume.
+        1. You MUST include an <img id="resume-photo" src="PLACEHOLDER" alt="Profile Photo" /> inside the header or sidebar.
+        2. Give it a CSS class 'profile-photo' and style it (width: 100px; height: 100px; object-fit: cover; border-radius: 50%;).
+        """
     
     # --- 🧠 SUPERIOR PROMPT ENGINEERING ---
     system_prompt = """
     You are a Senior CSS Architect and Elite Career Strategist. and a Great Resume Writer whoes goal is to optimize resumes for both ATS systems and human recruiters.
     Your task is to take old/raw resume data and a job description, and transform it into a visually stunning, and rewritten to ATS-optimized HTML resume.
     Dont be too formal with wordings like professional summary just keep it simple and straight to the point. which human recruiters will love and ATS systems can easily parse.
+
+    
 
     🚨 CORE DIRECTIVE: VISUAL STYLE IS PARAMOUNT.
     You must strictly adhere to the requested "Visual Style" defined below. The CSS you generate must be distinct, professional, and pixel-perfect.
@@ -225,8 +236,11 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
        - VIBE: Silicon Valley, Software Engineer, Product Manager.
 
     3. "Creative" (The Designer / Two-Column)
-       - LAYOUT: (IMPORTANT) Two-Column Layout (CSS Grid or Flexbox).
-       - never ever use a background color. only sidebar color is allowed.
+       - LAYOUT: (IMPORTANT) Two-Column Layout (CSS Grid or Flexbox make sure to the layout is not broken).
+       - 🚨 CRITICAL PRINT FIX: You MUST write a specific '@media print' block.
+         Inside '@media print', force the main container to 'display: grid' (or flex) with specific widths (e.g., 'grid-template-columns: 30% 70%').
+         Ensure the Sidebar and Main Content remain SIDE-BY-SIDE on the paper. Do NOT allow them to stack vertically.
+       - never ever use a background color. only sidebar color is allowed. and be smart with placements make sure it looks balanced. 
        - TYPOGRAPHY: Sans-serif.
        No Over the top designs keep it minimal yet creative. and professional.
        - VIBE: UI/UX Designer, Marketing, Creative Director.
@@ -297,6 +311,8 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     {data.job_description}
 
     Use the Following Color Instructions: {color_instruction}
+
+    Follow {photo_instruction} if user has selected a photo.
     """
 
     try:

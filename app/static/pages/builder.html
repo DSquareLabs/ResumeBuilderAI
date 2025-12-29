@@ -115,64 +115,77 @@
 
       <div class="editor-scroll-content">
 
-        <div class="input-group">
-          <label class="input-label">
-            <span><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">palette</span>
-              Color Reference</span>
-          </label>
-          <select id="styleSelect" class="modern-select" for="styleSelect" onchange="if(this.value==='Creative') document.querySelector('.word-btn').style.display='none'; else document.querySelector('.word-btn').style.display='inline-flex';">
-            <option value="Harvard">Harvard Standard (Clean)</option>
-            <option value="Tech">Tech Modern (Bold)</option>
-            <option value="Creative">Creative (Two-Column)</option>
-          </select>
-        </div>
-        <div class="input-group">
-          <label class="input-label">
-            <span><span class="material-icons-round" style="font-size:16px; vertical-align:middle;">format_paint</span>
-              Accent Color</span>
-          </label>
-
-          <div class="color-options">
-            
-
-            <button class="color-swatch active" onclick="selectColor('#000000')" title="Black & White"
-              style="background: #000000;"></button>
-
-            <button class="color-swatch" onclick="selectColor('#1e3a8a')" title="Navy Blue"
-              style="background: #1e3a8a;"></button>
-
-            <button class="color-swatch" onclick="selectColor('#059669')" title="Emerald Green"
-              style="background: #059669;"></button>
-
-            <button class="color-swatch" onclick="selectColor('#7c3aed')" title="Royal Purple"
-              style="background: #7c3aed;"></button>
-
-            <button class="color-swatch" onclick="selectColor('#dc2626')" title="Crimson Red"
-              style="background: #dc2626;"></button>
+        <div class="visual-group">
+          <div class="visual-header">
+            <span class="material-icons-round" style="font-size:14px;">tune</span>
+            Visual Settings
           </div>
-
-          <input type="hidden" id="selectedColor" value="default">
+          <div class="visual-controls">
+            <div class="style-select-wrapper">
+              <select id="styleSelect" class="modern-select" style="padding: 10px;" onchange="if(this.value==='Creative') document.querySelector('.word-btn').style.display='none'; else document.querySelector('.word-btn').style.display='inline-flex';">
+                <option value="Harvard">Harvard (Clean)</option>
+                <option value="Tech">Tech (Modern)</option>
+                <option value="Creative">Creative (Bold)</option>
+              </select>
+            </div>
+            <div class="color-grid-wrapper">
+              <div class="color-grid">
+                <button class="color-swatch active" onclick="selectColor('#000000')" title="Black" style="background: #000000;"></button>
+                <button class="color-swatch" onclick="selectColor('#1e3a8a')" title="Navy" style="background: #1e3a8a;"></button>
+                <button class="color-swatch" onclick="selectColor('#059669')" title="Emerald" style="background: #059669;"></button>
+                <button class="color-swatch" onclick="selectColor('#7c3aed')" title="Purple" style="background: #7c3aed;"></button>
+                <button class="color-swatch" onclick="selectColor('#dc2626')" title="Red" style="background: #dc2626;"></button>
+              </div>
+              <input type="hidden" id="selectedColor" value="default">
+            </div>
+          </div>
         </div>
+
+        <details class="modern-details">
+          <summary>
+            <div style="display:flex; align-items:center; gap:8px;">
+               <span class="material-icons-round" style="color:#6B7280; font-size:18px;">add_a_photo</span>
+               <span>Add Profile Photo <small style="color:#9CA3AF; font-weight:400;">(Optional)</small></span>
+            </div>
+            <span class="material-icons-round expand-icon" style="color:#D1D5DB;">expand_more</span>
+          </summary>
+          
+          <div class="details-content">
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <div id="photoPreviewContainer" style="display:none; position: relative;">
+                 <img id="photoPreview" src="" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #e5e7eb;">
+                 <button onclick="removePhoto()" style="position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding:0;">✕</button>
+              </div>
+
+              <div style="flex: 1;">
+                 <input type="file" id="photoUpload" accept="image/*" style="display:none" onchange="handlePhotoUpload(event)">
+                 <button class="btn-secondary" onclick="document.getElementById('photoUpload').click()">
+                    <span class="material-icons-round" style="font-size: 16px; margin-right: 6px;">upload</span> 
+                    Select Image
+                 </button>
+                 <p style="font-size: 11px; color: #9CA3AF; margin-top: 6px; text-align: center;">Square JPG/PNG recommended</p>
+              </div>
+            </div>
+          </div>
+        </details>
 
         <div class="input-group">
           <label class="input-label">
             <span>Your Experience</span>
             <a class="upload-link">
-              <span class="material-icons-round" style="font-size:14px; vertical-align:middle;">upload_file</span>
+              <span class="material-icons-round" style="font-size:14px;">upload_file</span>
               Upload Old CV
             </a>
             <input type="file" id="fileUpload" style="display:none" accept=".pdf">
           </label>
-          <textarea id="resumeText"
-            placeholder="Paste your current resume content here, or upload a PDF of Your CV Details above..."></textarea>
-          <div id="resumeCounter" style="font-size:12px; color:#666; margin-top:4px; text-align:right;"></div>
+          <textarea id="resumeText" placeholder="Paste your current resume content here..."></textarea>
+          <div id="resumeCounter" style="font-size:12px; margin-top:4px; text-align:right;"></div>
         </div>
 
         <div class="input-group">
-          <label class="input-label">Target Job Description</label>
-          <textarea id="jobDescription"
-            placeholder="Paste the job description here. The AI will optimize keywords for this specific role..."></textarea>
-          <div id="jobCounter" style="font-size:12px; color:#666; margin-top:4px; text-align:right;"></div>
+          <label class="input-label" id="lbl-job">Target Job Description</label>
+          <textarea id="jobDescription" style="height: 120px;" placeholder="Paste the job description here..."></textarea>
+          <div id="jobCounter" style="font-size:12px; margin-top:4px; text-align:right;"></div>
         </div>
 
       </div>
