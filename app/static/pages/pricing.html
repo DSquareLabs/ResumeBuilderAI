@@ -13,6 +13,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 fill=%22white%22>AI</text></svg>">
 
 
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 
@@ -98,6 +99,8 @@
 
 <main class="pricing-container">
 
+  
+
   <div class="header-section">
     <h1>Simple, Pay-As-You-Go <span style="color: var(--primary-blue);">Pricing</span></h1>
     <p>The AI Resume/Cover Letter Builder with <strong>no monthly subscriptions</strong>. Pay once, own your credits forever.</p>
@@ -113,8 +116,10 @@
       <div class="card-header">
         <h3>Basic</h3>
         <div class="price">
+          <span class="original-price" id="original-basic">€5.99</span>
           <span class="amount" id="price-basic">€3.99</span>
         </div>
+        <div class="discount-badge">Limited Offer</div>
       </div>
 
       <ul class="features">
@@ -138,8 +143,10 @@
       <div class="card-header">
         <h3>Popular</h3>
         <div class="price">
+          <span class="original-price" id="original-popular">€7.49</span>
           <span class="amount" id="price-popular">€4.99</span>
         </div>
+        <div class="discount-badge">Limited Offer</div>
       </div>
 
       <ul class="features">
@@ -161,8 +168,10 @@
       <div class="card-header">
         <h3>Pro</h3>
         <div class="price">
+          <span class="original-price" id="original-pro">€14.99</span>
           <span class="amount" id="price-pro">€9.99</span>
         </div>
+        <div class="discount-badge">Limited Offer</div>
       </div>
 
       <ul class="features">
@@ -211,6 +220,37 @@
 </main>
 
 <script src="/static/js/pricing.js"></script>
+<script>
+  (function(){
+    function niceOriginals(currency){
+      if(currency==='inr'){
+        return { basic: 199, popular: 399, pro: 799, symbol: '₹' };
+      }
+      return { basic: 5.99, popular: 7.49, pro: 14.99, symbol: '€' };
+    }
+    function format(val, isINR){ return isINR ? String(Math.round(val)) : Number(val).toFixed(2); }
+    function update(){
+      if(!window.currentCurrency) return;
+      var cur = window.currentCurrency;
+      var originals = niceOriginals(cur);
+      var isINR = (cur==='inr');
+      var map=[
+        { id:'original-basic',  val: originals.basic },
+        { id:'original-popular',val: originals.popular },
+        { id:'original-pro',    val: originals.pro }
+      ];
+      map.forEach(function(it){
+        var el=document.getElementById(it.id);
+        if(el) el.textContent = originals.symbol + format(it.val, isINR);
+      });
+    }
+    if(typeof window.setCurrency==='function'){
+      var _sc=window.setCurrency;
+      window.setCurrency=function(c){ _sc(c); try{update();}catch(e){} };
+    }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', update); } else { update(); }
+  })();
+  </script>
 <script defer src="/static/js/app.js"></script>
 <script src="/static/js/auth.js"></script>
 <script defer src="/static/js/common.js"></script>
