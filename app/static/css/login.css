@@ -553,3 +553,194 @@ footer {
   margin-right: 8px;
   color: #1a73e8;
 }
+
+/* --- Why Most Resumes Fail Section --- */
+section#why-fail.features-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  padding: 100px 0 !important;
+  position: relative;
+}
+
+section#why-fail.features-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230a66c2' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+section#why-fail.features-section .container {
+  position: relative;
+  z-index: 1;
+}
+
+section#why-fail.features-section .section-header {
+  text-align: center;
+  margin-bottom: 60px !important;
+}
+
+section#why-fail.features-section .section-header h2 {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: #1e293b;
+  margin-bottom: 16px;
+  position: relative;
+  display: inline-block;
+}
+
+section#why-fail.features-section .section-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(135deg, #0a66c2, #2563eb);
+  border-radius: 2px;
+}
+
+section#why-fail.features-section .comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+section#why-fail.features-section .col-left,
+section#why-fail.features-section .col-right {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+section#why-fail.features-section .col-left {
+  border-right: none;
+  padding-right: 40px;
+}
+
+section#why-fail.features-section .col-left h3 {
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 1.5rem;
+  margin-bottom: 24px;
+  text-align: center;
+  padding-top: 10px;
+}
+
+section#why-fail.features-section .col-right h3 {
+  color: #16a34a;
+  font-weight: 800;
+  font-size: 1.5rem;
+  margin-bottom: 24px;
+  text-align: center;
+  padding-top: 10px;
+}
+
+section#why-fail.features-section .item {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  background: #ffffff;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+section#why-fail.features-section .item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+section#why-fail.features-section .col-left .item::before {
+  background: #dc2626;
+}
+
+section#why-fail.features-section .col-right .item::before {
+  background: #16a34a;
+}
+
+section#why-fail.features-section .item:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #cbd5e1;
+}
+
+section#why-fail.features-section .item:last-child {
+  margin-bottom: 0;
+}
+
+section#why-fail.features-section .item div:first-child {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #1e293b;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+section#why-fail.features-section .col-left .item div:first-child::before {
+  content: '⚠️';
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+section#why-fail.features-section .col-right .item div:first-child::before {
+  content: '✨';
+  margin-right: 8px;
+  font-size: 1rem;
+}
+
+section#why-fail.features-section .item div:last-child {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 900px) {
+  section#why-fail.features-section .comparison-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+  }
+  
+  section#why-fail.features-section .col-left {
+    border-right: none;
+    padding-right: 40px;
+  }
+  
+  section#why-fail.features-section .col-right {
+    padding-left: 40px;
+  }
+}
+
+@media (max-width: 640px) {
+  section#why-fail.features-section {
+    padding: 60px 0 !important;
+  }
+  
+  section#why-fail.features-section .section-header h2 {
+    font-size: 2rem;
+  }
+  
+  section#why-fail.features-section .col-left,
+  section#why-fail.features-section .col-right {
+    padding: 30px 20px;
+  }
+  
+  section#why-fail.features-section .col-left h3,
+  section#why-fail.features-section .col-right h3 {
+    font-size: 1.3rem;
+  }
+}

@@ -527,7 +527,7 @@ def login_page(request: Request):
     return templates.TemplateResponse("index.html", {
         "request": request,
         "title": "Free AI Resume Builder from Job Descriptions | ResumeAI",
-        "description": "Generate ATS-friendly resumes and cover letters...",
+        "description": "Generate ATS-friendly resumes and cover letters for Any Job Description",
         "h1_text": "Generate AI Resumes & Cover Letters ",
         "hero_subtext": "Don't just update your old CV optimize it. Match it with Job Description with AI."
     })
