@@ -24,6 +24,7 @@ from docx.shared import Pt
 from app.database import engine, Base, get_db
 from app.models.profile import Profile
 from app.models.payment import Payment
+from app.models.blog import BlogPost
 
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
@@ -556,6 +557,35 @@ def builder_page():
 def pricing_page():
     return FileResponse("app/static/pages/pricing.html")
 
+@app.get("/blog")
+def blog_page(request: Request):
+    return templates.TemplateResponse("blog/index.html", {
+        "request": request,
+        "title": "Career Blog | ResumeAI",
+        "description": "Expert tips, insights, and strategies to accelerate your job search and career growth"
+    })
+
+@app.get("/blog/{slug}")
+def blog_post_page(request: Request, slug: str):
+    return templates.TemplateResponse("blog/post.html", {
+        "request": request,
+        "title": "Blog Post | ResumeAI",
+        "description": "Read our latest career insights and job search tips",
+        "slug": slug
+    })
+
+@app.get("/admin/create-blog")
+def create_blog_page(request: Request, email: str = Depends(get_verified_email)):
+    # Only allow dxdelvin@gmail.com to access the create blog page
+    if email != "dxdelvin@gmail.com":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return templates.TemplateResponse("blog/create.html", {
+        "request": request,
+        "title": "Create Blog Post | ResumeAI Admin",
+        "description": "Create and publish blog posts for ResumeAI"
+    })
+
 @app.get("/result/{resume_id}")
 def result_page(resume_id: int):
     return FileResponse("app/static/pages/result.html")
@@ -582,6 +612,9 @@ app.include_router(refine_router)
 
 from app.api.cover_letter import router as cover_letter_router
 app.include_router(cover_letter_router)
+
+from app.api.blog import router as blog_router
+app.include_router(blog_router)
 
 # Custom 404 Error Handler
 @app.exception_handler(StarletteHTTPException)

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <meta name="description" content="{{ description }}" />
+  <meta name="keywords"
+    content="AI resume builder, career advice, job search tips, resume writing, cover letter tips, ATS optimization, AI career tool" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://myresumematch.com/blog/{{ slug }}/" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://myresumematch.com/blog/{{ slug }}/" />
+  <meta property="og:title" content="{{ title }}" />
+  <meta property="og:description" content="{{ description }}" />
+  <meta property="og:image" content="{{ featured_image or 'https://myresumematch.com/static/img/og-image.jpg' }}" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="{{ featured_image or 'https://myresumematch.com/static/img/og-image.jpg' }}" />
+  <meta name="twitter:title" content="{{ title }}" />
+  <meta name="twitter:description" content="{{ description }}" />
+
+  <link rel="stylesheet" href="/static/css/login.css" />
+  <link rel="stylesheet" href="/static/css/navbar.css" />
+  <link rel="stylesheet" href="/static/css/blog.css" />
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 fill=%22white%22>AI</text></svg>">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="container nav-container">
+
+      <a href="/" class="logo-container" aria-label="ResumeAI Home">
+        <span class="logo-text">Resume</span>
+        <span class="logo-badge">AI</span>
+      </a>
+
+      <button class="hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <div class="nav-links">
+        <a href="/builder">Builder</a>
+        <a href="/blog">Blog</a>
+        <a href="/admin/create-blog" id="create-blog-link" style="display: none;">Create Blog</a>
+        <a href="/pricing">Pricing</a>
+
+        <div id="nav-auth-section">
+          <div class="g_id_signin" data-type="standard" data-size="medium" data-theme="filled_blue" data-text="signin"
+            data-shape="rectangular" data-logo_alignment="left">
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="blog-post-container" id="blog-post-content">
+    <div class="loading-spinner">Loading article...</div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>ResumeAI</h3>
+          <p>AI-powered resume and cover letter generation from job descriptions.</p>
+        </div>
+        <div class="footer-section">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="/builder">Resume Builder</a></li>
+            <li><a href="/blog">Career Blog</a></li>
+            <li><a href="/pricing">Pricing</a></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h4>Resources</h4>
+          <ul>
+            <li><a href="/privacy-policy">Privacy Policy</a></li>
+            <li><a href="/extra/contact">Contact</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 ResumeAI. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/static/js/common.js"></script>
+  <script>
+    let currentPost = null;
+    let relatedPosts = [];
+
+    // Check authentication and show/hide create blog link
+    document.addEventListener('DOMContentLoaded', function() {
+      checkAuthenticationAndShowCreateBlogLink();
+      loadBlogPost();
+    });
+
+    function checkAuthenticationAndShowCreateBlogLink() {
+      const token = localStorage.getItem('google_auth_token');
+      const createBlogLink = document.getElementById('create-blog-link');
+      
+      if (!token) {
+        createBlogLink.style.display = 'none';
+        return;
+      }
+
+      try {
+        const decoded = jwt_decode(token);
+        const email = decoded.email;
+        
+        if (email === 'dxdelvin@gmail.com') {
+          createBlogLink.style.display = 'inline-block';
+        } else {
+          createBlogLink.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error decoding token:', error);
+        createBlogLink.style.display = 'none';
+      }
+    }
+
+    async function loadBlogPost() {
+      const slug = window.location.pathname.split('/').pop();
+      
+      try {
+        const response = await fetch(`/api/blog/posts/${slug}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            showError('Article not found');
+          } else {
+            showError('Error loading article');
+          }
+          return;
+        }
+        
+        const post = await response.json();
+        currentPost = post;
+        renderBlogPost(post);
+        updateMetaTags(post);
+        loadRelatedPosts(post.category);
+        
+      } catch (error) {
+        console.error('Error loading blog post:', error);
+        showError('Error loading article');
+      }
+    }
+
+    function renderBlogPost(post) {
+      const container = document.getElementById('blog-post-content');
+      
+      const tags = post.tags ? post.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [];
+      
+      let html = `
+        <a href="/blog" class="back-to-blog">
+          ← Back to Blog
+        </a>
+        
+        <article>
+          <header class="blog-post-header">
+            ${post.category ? `<div class="blog-post-category">${post.category}</div>` : ''}
+            <h1 class="blog-post-title">${post.title}</h1>
+            <div class="blog-post-meta">
+              <span class="blog-post-author">${post.author_name}</span>
+              <span>•</span>
+              <span>${formatDate(post.created_at)}</span>
+              <span>•</span>
+              <span>${post.read_time_minutes} min read</span>
+            </div>
+          </header>
+          
+          ${post.featured_image ? `<img src="${post.featured_image}" alt="${post.title}" class="blog-post-featured-image">` : ''}
+          
+          <div class="blog-post-content">
+            ${formatContent(post.content)}
+          </div>
+          
+          <footer class="blog-post-footer">
+            ${tags.length > 0 ? `
+              <div class="blog-post-tags">
+                ${tags.map(tag => `<span class="blog-post-tag">#${tag}</span>`).join('')}
+              </div>
+            ` : ''}
+            
+            <div class="blog-post-navigation" id="related-posts">
+              <div class="loading-spinner">Loading related articles...</div>
+            </div>
+          </footer>
+        </article>
+      `;
+      
+      container.innerHTML = html;
+    }
+
+    function formatContent(content) {
+      // Convert line breaks to paragraphs and handle basic markdown
+      return content
+        .split('\n\n')
+        .map(paragraph => {
+          if (paragraph.trim().startsWith('#')) {
+            return paragraph; // Keep headers as-is
+          } else if (paragraph.trim().startsWith('-') || paragraph.trim().startsWith('*')) {
+            return paragraph; // Keep lists as-is
+          } else if (paragraph.trim().startsWith('>')) {
+            return `<blockquote>${paragraph.replace(/^>\s*/, '')}</blockquote>`;
+          } else {
+            return `<p>${paragraph}</p>`;
+          }
+        })
+        .join('');
+    }
+
+    async function loadRelatedPosts(category) {
+      if (!category) {
+        document.getElementById('related-posts').innerHTML = '';
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/blog/posts?published_only=true&category=${category}&limit=6`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const posts = await response.json();
+        
+        // Filter out current post
+        const relatedPosts = posts.filter(post => post.slug !== currentPost.slug);
+        renderRelatedPosts(relatedPosts.slice(0, 2));
+        
+      } catch (error) {
+        console.error('Error loading related posts:', error);
+        document.getElementById('related-posts').innerHTML = '';
+      }
+    }
+
+    function renderRelatedPosts(posts) {
+      const container = document.getElementById('related-posts');
+      
+      if (posts.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+      
+      let html = '';
+      
+      if (posts.length >= 1) {
+        html += `
+          <a href="/blog/${posts[0].slug}" class="nav-card nav-card-prev">
+            <div class="nav-card-label">Previous Article</div>
+            <div class="nav-card-title">${posts[0].title}</div>
+          </a>
+        `;
+      }
+      
+      if (posts.length >= 2) {
+        html += `
+          <a href="/blog/${posts[1].slug}" class="nav-card nav-card-next">
+            <div class="nav-card-label">Next Article</div>
+            <div class="nav-card-title">${posts[1].title}</div>
+          </a>
+        `;
+      }
+      
+      container.innerHTML = html;
+    }
+
+    function updateMetaTags(post) {
+      document.title = `${post.title} | ResumeAI Blog`;
+      
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.content = post.meta_description || post.excerpt || post.content.substring(0, 160);
+      }
+      
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle) {
+        ogTitle.content = post.title;
+      }
+      
+      const ogDescription = document.querySelector('meta[property="og:description"]');
+      if (ogDescription) {
+        ogDescription.content = post.meta_description || post.excerpt || post.content.substring(0, 160);
+      }
+      
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      if (ogImage && post.featured_image) {
+        ogImage.content = post.featured_image;
+      }
+    }
+
+    function showError(message) {
+      const container = document.getElementById('blog-post-content');
+      container.innerHTML = `
+        <div class="error-message">
+          <h1>${message}</h1>
+          <p>The article you're looking for might not exist or has been removed.</p>
+          <a href="/blog" style="color: #0a66c2; font-weight: 600;">← Back to Blog</a>
+        </div>
+      `;
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+  </script>
+</body>
+
+</html>
