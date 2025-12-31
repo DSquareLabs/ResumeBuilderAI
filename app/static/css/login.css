@@ -262,25 +262,107 @@ body.landing .hero-content {
   position: relative;
   display: flex;
   justify-content: center;
+  transform: translateX(40px);
 }
 
 /* The Abstract Card */
 .abstract-card {
-  width: 380px;
-  height: 480px;
+  width: 360px;
+  height: 460px;
   background: var(--white);
-  border-radius: 16px;
-  box-shadow: 0 30px 60px rgba(10, 102, 194, 0.15);
-  border: 1px solid var(--border-color);
-  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0 20px 40px rgba(10, 102, 194, 0.1);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 28px;
   position: relative;
   z-index: 2;
-  transform: rotate(-3deg);
+  transform: rotate(-2deg);
   transition: transform 0.3s ease;
+  opacity: 0.9;
 }
 
 .abstract-card:hover {
-  transform: rotate(0deg) scale(1.02);
+  transform: rotate(0deg) scale(1.01);
+  box-shadow: 0 25px 45px rgba(10, 102, 194, 0.15);
+}
+
+/* Resume Content Styles */
+.resume-avatar {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #0a66c2, #1e88e5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.avatar-initials {
+  color: white;
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.resume-info {
+  flex: 1;
+}
+
+.resume-name {
+  font-weight: 700;
+  font-size: 18px;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.resume-title {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.resume-section {
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #0a66c2;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.resume-item {
+  margin-bottom: 12px;
+}
+
+.item-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
+.item-subtitle {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.skills-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.skill-tag {
+  background: #e8f4fd;
+  color: #0a66c2;
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 11px;
+  font-weight: 500;
 }
 
 /* Skeleton Loaders (Simulating Resume Text) */
@@ -323,20 +405,22 @@ body.landing .hero-content {
 /* Floating Badges */
 .floating-badge {
   position: absolute;
-  background: var(--white);
-  padding: 10px 20px;
-  border-radius: 30px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-  font-weight: 700;
-  font-size: 0.9rem;
+  background: linear-gradient(135deg, #ffffff, #f8fafd);
+  padding: 12px 22px;
+  border-radius: 32px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.15), 0 4px 8px rgba(0,0,0,0.1);
+  font-weight: 800;
+  font-size: 0.95rem;
   color: var(--primary-dark);
   display: flex;
   align-items: center;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--primary-blue);
+  opacity: 1;
+  z-index: 10;
 }
 
-.badge-1 { top: 40px; right: -30px; }
-.badge-2 { bottom: 60px; left: -40px; }
+.badge-1 { top: 40px; right: -35px; }
+.badge-2 { bottom: 60px; left: -45px; }
 
 /* --- Features Section --- */
 .features-section {
