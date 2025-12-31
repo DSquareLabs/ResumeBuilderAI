@@ -1908,7 +1908,7 @@ function updateNavbarUI(user) {
       // We add a placeholder div with specific dimensions to prevent layout shift
       container.innerHTML = `
           <a href="/pricing" class="nav-link">Pricing</a>
-          <div id="google-nav-btn" style="display: inline-flex; align-items: center; margin-left: 10px; min-height: 40px; min-width: 100px;"></div>
+          <div id="google-nav-btn" style="display: inline-flex; align-items: center; margin-left: 20px;"></div>
       `;
 
       // 2. RETRY LOGIC: Wait for Google Script to load

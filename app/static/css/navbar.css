@@ -44,8 +44,7 @@
 
 .nav-links {
   display: flex;
-      align-items: center;
-
+  align-items: baseline;
   gap: 20px;
 }
 
@@ -64,6 +63,22 @@
   color: #dc3545;
 }
 
+/* Google button container styling */
+#google-nav-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: baseline !important;
+  white-space: nowrap !important;
+  height: auto !important;
+  line-height: 1 !important;
+}
+
+/* Ensure Google button doesn't overlap with adjacent elements */
+#google-nav-btn > div {
+  margin: 0 !important;
+  transform: none !important;
+  vertical-align: middle !important;
+}
 
 /* Button styles for navbar */
 .nav-links a.btn-primary {
