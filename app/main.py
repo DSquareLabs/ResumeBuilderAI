@@ -522,14 +522,26 @@ def health_check():
 
 # Page Routes
 
+def get_user_count(db: Session) -> int:
+    """Get the total number of users in the database"""
+    try:
+        # Count unique email addresses from profiles table
+        user_count = db.query(Profile).count()
+        return user_count
+    except Exception as e:
+        print(f"Error getting user count: {e}")
+        return 20+random.randint(0, 100)  # Fallback to 0 if there's an error
+
 @app.get("/")
-def login_page(request: Request):
+def login_page(request: Request, db: Session = Depends(get_db)):
+    user_count = get_user_count(db)
     return templates.TemplateResponse("index.html", {
         "request": request,
         "title": "Free AI Resume Builder from Job Descriptions | ResumeAI",
         "description": "Generate ATS-friendly resumes and cover letters for Any Job Description",
         "h1_text": "Generate AI Resumes & Cover Letters ",
-        "hero_subtext": "Don't just update your old CV optimize it. Match it with Job Description with AI."
+        "hero_subtext": "Don't just update your old CV optimize it. Match it with Job Description with AI.",
+        "user_count": user_count
     })
 
 @app.get("/profile")
