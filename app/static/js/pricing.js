@@ -15,7 +15,7 @@ async function selectPlan(plan) {
 
   try {
     // 🔒 SECURE: No email in body, use JWT token
-    const res = await fetch("/api/billing/create-checkout-session", {
+    const res = await authorizedFetch("/api/billing/create-checkout-session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -26,6 +26,8 @@ async function selectPlan(plan) {
         currency: currentCurrency,  
       }),
     });
+
+    if (!res) return; // Network error handled by authorizedFetch
 
     if (!res.ok) {
       const err = await res.json();

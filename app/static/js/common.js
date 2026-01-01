@@ -279,23 +279,47 @@ function isTokenExpired(token) {
 }
 
 function checkSession() {
-    const token = localStorage.getItem("google_token"); // Or whatever key you use
+    const savedUser = localStorage.getItem("user");
     
-    if (token && isTokenExpired(token)) {
-        console.warn("Session expired. Logging out...");
-        handleLogout(); // Call your existing logout function
+    if (savedUser && savedUser !== 'null' && savedUser !== 'undefined') {
+        try {
+            const user = JSON.parse(savedUser);
+            const token = user.token;
+            
+            if (token && isTokenExpired(token)) {
+                console.warn("Session expired. Logging out...");
+                logout(); // Call the existing logout function
+            }
+        } catch (e) {
+            console.error("Error parsing user data:", e);
+            logout(); // If we can't parse user data, log out
+        }
     }
 }
 
 // Run this immediately on page load
 document.addEventListener("DOMContentLoaded", () => {
     checkSession();
+    
+    // Also run periodic check every 5 minutes to catch expired tokens during active sessions
+    setInterval(checkSession, 5 * 60 * 1000);
 });
 
 // In app/static/js/common.js
 
 async function authorizedFetch(url, options = {}) {
-    const token = localStorage.getItem("google_token");
+    // Get token from user object, not google_token
+    const savedUser = localStorage.getItem("user");
+    let token = null;
+    
+    if (savedUser && savedUser !== 'null' && savedUser !== 'undefined') {
+        try {
+            const user = JSON.parse(savedUser);
+            token = user.token;
+        } catch (e) {
+            console.error("Error parsing user data for token:", e);
+        }
+    }
     
     const headers = {
         'Content-Type': 'application/json',
@@ -306,20 +330,55 @@ async function authorizedFetch(url, options = {}) {
         headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const response = await fetch(url, {
-        ...options,
-        headers
-    });
+    try {
+        const response = await fetch(url, {
+            ...options,
+            headers
+        });
 
-    // 🚨 THE FIX: Catch 401 (Unauthorized) errors globally
-    if (response.status === 401 || response.status === 403) {
-        console.error("Token invalid or expired. Forcing logout.");
-        localStorage.removeItem("google_token");
-        // Optional: Show a nice alert before reloading
-        alert("Your session has expired. Please sign in again.");
-        window.location.href = "/"; 
-        return null;
+        // THE FIX: Catch 401 (Unauthorized) errors globally
+        if (response.status === 401 || response.status === 403) {
+            console.error("Token invalid or expired. Forcing logout.");
+            // Show a nice alert before reloading
+            if (window.showToast) {
+                window.showToast("Your session has expired. Please sign in again.", "error");
+            }
+            setTimeout(() => {
+                logout();
+            }, 1500);
+            return null;
+        }
+
+        return response;
+    } catch (error) {
+        // NETWORK ERROR HANDLING: Log out and return to home on network errors
+        console.error("Network error occurred:", error);
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            // This is likely a network connectivity issue
+            showToast("Network error. Logging out for security...", "error");
+            setTimeout(() => {
+                logout();
+            }, 1500);
+        }
+        throw error;
     }
+}
 
-    return response;
+// Enhanced fetch wrapper with network error handling for non-authenticated requests
+async function safeFetch(url, options = {}) {
+    try {
+        const response = await fetch(url, options);
+        return response;
+    } catch (error) {
+        // NETWORK ERROR HANDLING: Log out and return to home on network errors
+        console.error("Network error occurred:", error);
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            // This is likely a network connectivity issue
+            showToast("Network error. Logging out for security...", "error");
+            setTimeout(() => {
+                logout();
+            }, 1500);
+        }
+        throw error;
+    }
 }

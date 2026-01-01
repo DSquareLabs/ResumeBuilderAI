@@ -89,11 +89,13 @@ async function handleGoogleLogin(response) {
         
         if (window.showToast) window.showToast("Signed in successfully!", "success");
 
-        const res = await fetch("/api/profile", {
+        const res = await authorizedFetch("/api/profile", {
             headers: {
                 "Authorization": `Bearer ${response.credential}`
             }
         });
+
+        if (!res) return; // Network error handled by authorizedFetch
 
         if (res.ok) {
             const profile = await res.json();

@@ -71,11 +71,13 @@ async function loadUserProfile() {
   }
 
   try {
-    const res = await fetch("/api/profile", {
+    const res = await authorizedFetch("/api/profile", {
       headers: {
         "Authorization": `Bearer ${currentUser.token}`
       }
     });
+
+    if (!res) return; // Network error handled by authorizedFetch
 
     // 3. THE FIX: Handle Expired Tokens (401)
     if (res.status === 401) {
@@ -702,7 +704,7 @@ async function generateResume() {
 
   try {
     // 🔒 SECURE: No email in body, use JWT token
-    const response = await fetch("/api/generate-resume", {
+    const response = await authorizedFetch("/api/generate-resume", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -722,6 +724,8 @@ async function generateResume() {
         portfolio: currentProfile.portfolio || ""
       })
     });
+
+    if (!response) return; // Network error handled by authorizedFetch
 
     const data = await response.json();
 
@@ -983,131 +987,134 @@ async function updateResumeWithAI() {
   if (!currentUser) {
     showToast("Please sign in to generate your CVs! 🚀", "info");
     return;
-  } 
-  const inputEl = document.querySelector('.refine-input');
-  const instruction = inputEl.value.trim();
-  
-  if (!instruction) return;
-
-  // 1. Credit Check
-  if (!currentProfile || currentProfile.credits < 0.5) {
-    showCreditPopup();
-    return;
-  }
-
-  // UI Loading State
-  const btn = document.querySelector('.btn-refine-send');
-  const originalIcon = btn.innerHTML;
-  btn.innerHTML = '<span class="material-icons-round spinning">hourglass_empty</span>';
-  btn.disabled = true;
-  inputEl.disabled = true;
-
-  try {
-    // 🟢 OPTIMIZATION: STRIP IMAGE PAYLOAD
-    let currentHTML = document.getElementById('output').innerHTML;
+} 
+    const inputEl = document.querySelector('.refine-input');
+    const instruction = inputEl.value.trim();
     
-    // Create a temp DOM to manipulate (without affecting the screen yet)
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = currentHTML;
-    
-    // Find the heavy image and replace with a placeholder text to save bandwidth
-    const img = tempDiv.querySelector('img[id="resume-photo"]') || tempDiv.querySelector('.profile-photo');
-    if (img) {
-        img.src = "PLACEHOLDER_PHOTO_MARKER"; 
+    if (!instruction) return;
+
+    // 1. Credit Check
+    if (!currentProfile || currentProfile.credits < 0.5) {
+      showCreditPopup();
+      return;
     }
-    const lightweightHTML = tempDiv.innerHTML; // <--- Send THIS, not the big one
 
-    const jobDescription = document.getElementById("jobDescription").value.trim();
-    const currentScoreEl = document.getElementById("atsScore");
-    const currentScore = currentScoreEl ? (parseFloat(currentScoreEl.innerText) || 0) : 0;
+    // UI Loading State
+    const btn = document.querySelector('.btn-refine-send');
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<span class="material-icons-round spinning">hourglass_empty</span>';
+    btn.disabled = true;
+    inputEl.disabled = true;
 
-    // 2. Send Lightweight Request
-    const response = await fetch("/api/refine-resume", { 
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${currentUser.token}`
-      },
-      body: JSON.stringify({
-        html: lightweightHTML, 
-        instruction: instruction,
-        job_description: jobDescription,
-        current_ats_score: currentScore
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      if (response.status === 402) {
-        showCreditPopup();
-        return;
+    try {
+      // 🟢 OPTIMIZATION: STRIP IMAGE PAYLOAD
+      let currentHTML = document.getElementById('output').innerHTML;
+      
+      // Create a temp DOM to manipulate (without affecting the screen yet)
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = currentHTML;
+      
+      // Find the heavy image and replace with a placeholder text to save bandwidth
+      const img = tempDiv.querySelector('img[id="resume-photo"]') || tempDiv.querySelector('.profile-photo');
+      if (img) {
+          img.src = "PLACEHOLDER_PHOTO_MARKER"; 
       }
-      throw new Error(data.detail || data.error || "Failed to update");
-    }
+      const lightweightHTML = tempDiv.innerHTML; // <--- Send THIS, not the big one
 
-    if (!data.updated_html) throw new Error("No updated content received");
+      const jobDescription = document.getElementById("jobDescription").value.trim();
+      const currentScoreEl = document.getElementById("atsScore");
+      const currentScore = currentScoreEl ? (parseFloat(currentScoreEl.innerText) || 0) : 0;
 
-    // 🟢 RESTORE IMAGE (Stitch it back in)
-    let finalHtml = data.updated_html;
-    
-    // If we have a photo in memory, inject it back into the AI's result
-    if (currentPhotoBase64) {
-        const resultDiv = document.createElement('div');
-        resultDiv.innerHTML = finalHtml;
-        
-        // The AI preserves the <img> tag, so we just fill the src back in
-        const resImg = resultDiv.querySelector('img') || resultDiv.querySelector('#resume-photo');
-        if (resImg) {
-            resImg.src = currentPhotoBase64;
-            // Ensure ID is correct for future updates
-            resImg.id = "resume-photo"; 
+      // 2. Send Lightweight Request
+      const response = await authorizedFetch("/api/refine-resume", { 
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify({
+          html: lightweightHTML, 
+          instruction: instruction,
+          job_description: jobDescription,
+          current_ats_score: currentScore
+        })
+      });
+
+      if (!response) return; // Network error handled by authorizedFetch
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Check if it's a credit error
+        if (response.status === 402) {
+          showCreditPopup();
+          return;
         }
-        finalHtml = resultDiv.innerHTML;
+        throw new Error(data.detail || data.error || "Failed to update");
+      }
+
+      if (!data.updated_html) throw new Error("No updated content received");
+
+      // 🟢 RESTORE IMAGE (Stitch it back in)
+      let finalHtml = data.updated_html;
+      
+      // If we have a photo in memory, inject it back into the AI's result
+      if (currentPhotoBase64) {
+          const resultDiv = document.createElement('div');
+          resultDiv.innerHTML = finalHtml;
+          
+          // The AI preserves the <img> tag, so we just fill the src back in
+          const resImg = resultDiv.querySelector('img') || resultDiv.querySelector('#resume-photo');
+          if (resImg) {
+              resImg.src = currentPhotoBase64;
+              // Ensure ID is correct for future updates
+              resImg.id = "resume-photo"; 
+          }
+          finalHtml = resultDiv.innerHTML;
+      }
+
+      // 3. Update DOM
+      const outputEl = document.getElementById('output');
+      outputEl.innerHTML = finalHtml;
+      outputEl.contentEditable = true;
+      
+      // 4. Update Credits & Score
+      currentProfile.credits = data.credits_left;
+      const creditEl = document.getElementById("creditCount");
+      if (creditEl) creditEl.innerText = currentProfile.credits;
+
+      if (data.ats_score !== undefined && data.ats_score !== null) {
+          const atsScoreEl = document.getElementById("atsScore");
+          if (atsScoreEl) {
+               const numericScore = parseFloat(data.ats_score) || 0;
+               atsScoreEl.innerText = numericScore;
+               
+               // Update Visuals
+               const level = numericScore >= 80 ? "high" : numericScore >= 60 ? "medium" : "low";
+               atsScoreEl.parentElement.className = `score-circle ${level}`;
+               if (typeof updateGauge === "function") updateGauge(numericScore);
+               
+               localStorage.setItem("autosave_score", numericScore);
+          }
+          showToast(`Updated! (Score: ${data.ats_score})`, "success");
+      } else {
+          showToast("Resume updated successfully!", "success");
+      }
+
+      // Reset UI
+      inputEl.value = ''; 
+      btn.style.background = "#10B981"; 
+      setTimeout(() => { btn.style.background = ""; }, 1000);
+
+    } catch (err) {
+      console.error("Refine error:", err);
+      showToast("Error: " + err.message, "error");
+    } finally {
+      btn.innerHTML = originalIcon;
+      btn.disabled = false;
+      inputEl.disabled = false;
+      inputEl.focus();
     }
-
-    // 3. Update DOM
-    const outputEl = document.getElementById('output');
-    outputEl.innerHTML = finalHtml;
-    outputEl.contentEditable = true;
-    
-    // 4. Update Credits & Score
-    currentProfile.credits = data.credits_left;
-    const creditEl = document.getElementById("creditCount");
-    if (creditEl) creditEl.innerText = currentProfile.credits;
-
-    if (data.ats_score !== undefined && data.ats_score !== null) {
-        const atsScoreEl = document.getElementById("atsScore");
-        if (atsScoreEl) {
-             const numericScore = parseFloat(data.ats_score) || 0;
-             atsScoreEl.innerText = numericScore;
-             
-             // Update Visuals
-             const level = numericScore >= 80 ? "high" : numericScore >= 60 ? "medium" : "low";
-             atsScoreEl.parentElement.className = `score-circle ${level}`;
-             if (typeof updateGauge === "function") updateGauge(numericScore);
-             
-             localStorage.setItem("autosave_score", numericScore);
-        }
-        showToast(`Updated! (Score: ${data.ats_score})`, "success");
-    } else {
-        showToast("Resume updated successfully!", "success");
-    }
-
-    // Reset UI
-    inputEl.value = ''; 
-    btn.style.background = "#10B981"; 
-    setTimeout(() => { btn.style.background = ""; }, 1000);
-
-  } catch (err) {
-    console.error("Refine error:", err);
-    showToast("Error: " + err.message, "error");
-  } finally {
-    btn.innerHTML = originalIcon;
-    btn.disabled = false;
-    inputEl.disabled = false;
-    inputEl.focus();
-  }
 }
 /*************************************************
  * MOBILE RESPONSIVENESS & UI ADJUSTMENTS
@@ -1371,7 +1378,7 @@ async function submitCoverLetterGen() {
 
     try {
         // 🔒 SECURE: No email in body, use JWT token
-        const response = await fetch("/api/generate-cover-letter", {
+        const response = await authorizedFetch("/api/generate-cover-letter", {
             method: "POST",
             headers: { 
                 "Content-Type": "application/json",
@@ -1390,6 +1397,8 @@ async function submitCoverLetterGen() {
                 location: currentProfile.location || ""
             })
         });
+
+        if (!response) return; // Network error handled by authorizedFetch
 
         const data = await response.json();
         
@@ -1477,7 +1486,7 @@ async function updateCoverLetterWithAI() {
     try {
         const currentHTML = document.getElementById('output-cl').innerHTML;
         // 🔒 SECURE: No email in body, use JWT token
-        const res = await fetch("/api/refine-resume", {
+        const res = await authorizedFetch("/api/refine-resume", {
              method: "POST",
              headers: { 
                  "Content-Type": "application/json",
@@ -1490,6 +1499,9 @@ async function updateCoverLetterWithAI() {
                  // ✅ NO email field - it comes from JWT token
              })
         });
+
+        if (!res) return; // Network error handled by authorizedFetch
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -1615,7 +1627,7 @@ async function exportActiveDocumentDocx() {
     const filename = `${title}_${new Date().toISOString().slice(0, 10)}`;
 
     // Prefer high-fidelity Word export (HTML+CSS as .doc)
-    let res = await fetch('/api/export-word', {
+    let res = await safeFetch('/api/export-word', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1624,9 +1636,11 @@ async function exportActiveDocumentDocx() {
       body: JSON.stringify({ html, filename })
     });
 
+    if (!res) return; // Network error handled by safeFetch
+
     // Fallback to DOCX if needed
     if (!res.ok) {
-      res = await fetch('/api/export-docx', {
+      res = await safeFetch('/api/export-docx', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1634,6 +1648,8 @@ async function exportActiveDocumentDocx() {
         },
         body: JSON.stringify({ html, filename })
       });
+
+      if (!res) return; // Network error handled by safeFetch
     }
 
     if (!res.ok) {

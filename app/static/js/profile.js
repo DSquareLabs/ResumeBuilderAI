@@ -36,7 +36,13 @@ async function loadProfile() {
 
   try {
     // 🔒 SECURE: Use JWT token, not email parameter
-    const res = await authorizedFetch("/api/profile", true);
+    const res = await authorizedFetch("/api/profile", {
+      headers: {
+        "Authorization": `Bearer ${user.token}`
+      }
+    });
+
+    if (!res) return; // Network error handled by authorizedFetch
 
     if (!res.ok) {
       throw new Error("Failed to load profile");
@@ -142,7 +148,7 @@ async function saveProfile() {
   };
 
   try {
-    const res = await fetch("/api/profile", {
+    const res = await authorizedFetch("/api/profile", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -150,6 +156,8 @@ async function saveProfile() {
       },
       body: JSON.stringify(payload),
     });
+
+    if (!res) return; // Network error handled by authorizedFetch
 
     if (res.ok) {
         showToast("Profile updated successfully!", "success");
@@ -244,12 +252,14 @@ async function handleDeleteAccount() {
         btn.disabled = true;
     }
 
-    const res = await fetch("/api/profile", {
+    const res = await authorizedFetch("/api/profile", {
       method: "DELETE",
       headers: {
         "Authorization": `Bearer ${user.token}`
       }
     });
+
+    if (!res) return; // Network error handled by authorizedFetch
 
     if (res.ok) {
       showToast("Account deleted successfully.", "success");
