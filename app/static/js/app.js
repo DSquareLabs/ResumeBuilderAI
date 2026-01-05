@@ -1900,6 +1900,7 @@ function updateNavbarUI(user) {
       // --- LOGGED IN (Profile First) ---
       container.innerHTML = `
           <a href="/profile" class="nav-link" style="font-weight:600;">My Profile</a>
+          <a href="/blog" class="nav-link">Blog</a>
           <a href="/pricing" class="nav-link">Pricing</a>
           <a href="#" class="nav-link logout" onclick="logout(); return false;">Sign Out</a>
       `;
@@ -1907,6 +1908,7 @@ function updateNavbarUI(user) {
       // --- GUEST (Pricing First) ---
       // We add a placeholder div with specific dimensions to prevent layout shift
       container.innerHTML = `
+          <a href="/blog" class="nav-link">Blog</a>
           <a href="/pricing" class="nav-link">Pricing</a>
           <div id="google-nav-btn" style="display: inline-flex; align-items: center; margin-left: 20px;"></div>
       `;

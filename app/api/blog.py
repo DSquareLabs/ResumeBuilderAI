@@ -7,9 +7,29 @@ import json
 
 from app.database import get_db
 from app.models.blog import BlogPost
+from app.models.like import BlogLike
 from app.dependencies import get_verified_email
 
 router = APIRouter(prefix="/api/blog", tags=["blog"])
+
+def serialize_blog_post(post):
+    """Convert BlogPost ORM object to dict for JSON serialization"""
+    return {
+        "id": post.id,
+        "title": post.title,
+        "slug": post.slug,
+        "content": post.content,
+        "excerpt": post.excerpt,
+        "meta_description": post.meta_description,
+        "featured_image": post.featured_image,
+        "published": post.published,
+        "created_at": post.created_at.isoformat() if post.created_at else None,
+        "updated_at": post.updated_at.isoformat() if post.updated_at else None,
+        "author_name": post.author_name,
+        "category": post.category,
+        "tags": post.tags,
+        "read_time_minutes": post.read_time_minutes
+    }
 
 class BlogPostResponse(BaseModel):
     id: int
@@ -29,16 +49,6 @@ class BlogPostResponse(BaseModel):
 
     class Config:
         from_attributes = True
-        
-    @classmethod
-    def from_orm(cls, obj):
-        """Custom method to handle datetime serialization"""
-        data = obj.__dict__.copy()
-        if 'created_at' in data and data['created_at']:
-            data['created_at'] = data['created_at'].isoformat()
-        if 'updated_at' in data and data['updated_at']:
-            data['updated_at'] = data['updated_at'].isoformat()
-        return cls(**data)
 
 class BlogPostCreate(BaseModel):
     title: str
@@ -74,7 +84,7 @@ def create_blog_post(
     db.commit()
     db.refresh(new_post)
     
-    return BlogPostResponse.from_orm(new_post)
+    return serialize_blog_post(new_post)
 
 @router.get("/posts", response_model=List[BlogPostResponse])
 def get_blog_posts(
@@ -96,7 +106,7 @@ def get_blog_posts(
         
         posts = query.order_by(BlogPost.created_at.desc()).offset(offset).limit(limit).all()
         
-        return [BlogPostResponse.from_orm(post) for post in posts]
+        return [serialize_blog_post(post) for post in posts]
     except Exception as e:
         print(f"Error in get_blog_posts: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -110,7 +120,7 @@ def get_blog_post(slug: str, db: Session = Depends(get_db)):
         if not post:
             raise HTTPException(status_code=404, detail="Blog post not found")
         
-        return BlogPostResponse.from_orm(post)
+        return serialize_blog_post(post)
     except Exception as e:
         print(f"Error in get_blog_post: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -138,7 +148,116 @@ def get_featured_posts(limit: int = 3, db: Session = Depends(get_db)):
             BlogPost.featured_image.isnot(None)
         ).order_by(BlogPost.created_at.desc()).limit(limit).all()
         
-        return [BlogPostResponse.from_orm(post) for post in posts]
+        return [serialize_blog_post(post) for post in posts]
     except Exception as e:
         print(f"Error in get_featured_posts: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+# --- Like Endpoints ---
+
+class LikeRequest(BaseModel):
+    user_email: str
+
+@router.post("/posts/{post_id}/like")
+def toggle_like_post(
+    post_id: int,
+    request: LikeRequest,
+    db: Session = Depends(get_db)
+):
+    """Toggle like status for a blog post"""
+    try:
+        user_email = request.user_email
+        if not user_email:
+            raise HTTPException(status_code=400, detail="user_email is required")
+        
+        # Verify post exists
+        post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="Blog post not found")
+        
+        # Check if like already exists
+        existing_like = db.query(BlogLike).filter(
+            BlogLike.post_id == post_id,
+            BlogLike.user_email == user_email
+        ).first()
+        
+        if existing_like:
+            # Unlike: remove the like
+            db.delete(existing_like)
+            db.commit()
+            liked = False
+        else:
+            # Like: add new like
+            new_like = BlogLike(post_id=post_id, user_email=user_email)
+            db.add(new_like)
+            db.commit()
+            liked = True
+        
+        # Get total likes
+        total_likes = db.query(BlogLike).filter(BlogLike.post_id == post_id).count()
+        
+        return {
+            "liked": liked,
+            "total_likes": total_likes
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error toggling like: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to toggle like")
+
+@router.get("/posts/{post_id}/likes")
+def get_post_likes(
+    post_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get like information for a blog post"""
+    try:
+        # Verify post exists
+        post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="Blog post not found")
+        
+        # Get total likes
+        total_likes = db.query(BlogLike).filter(BlogLike.post_id == post_id).count()
+        
+        return {
+            "post_id": post_id,
+            "total_likes": total_likes,
+            "user_liked": False  # Default false when no user_email provided
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting likes: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get likes")
+
+@router.get("/posts/{post_id}/user-like/{user_email}")
+def check_user_like(
+    post_id: int,
+    user_email: str,
+    db: Session = Depends(get_db)
+):
+    """Check if a specific user has liked a blog post"""
+    try:
+        # Verify post exists
+        post = db.query(BlogPost).filter(BlogPost.id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="Blog post not found")
+        
+        # Check if user has liked the post
+        like = db.query(BlogLike).filter(
+            BlogLike.post_id == post_id,
+            BlogLike.user_email == user_email
+        ).first()
+        
+        return {
+            "post_id": post_id,
+            "user_email": user_email,
+            "user_liked": like is not None
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error checking user like: {e}")
+        raise HTTPException(status_code=500, detail="Failed to check like status")

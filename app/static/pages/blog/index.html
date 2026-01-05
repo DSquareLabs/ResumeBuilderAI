@@ -56,9 +56,6 @@
         <a href="/pricing">Pricing</a>
 
         <div id="nav-auth-section">
-          <div class="g_id_signin" data-type="standard" data-size="medium" data-theme="filled_blue" data-text="signin"
-            data-shape="rectangular" data-logo_alignment="left">
-          </div>
         </div>
       </div>
     </div>
@@ -110,12 +107,13 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2024 ResumeAI. All rights reserved.</p>
+        <p>&copy; 2026 ResumeAI. All rights reserved.</p>
       </div>
     </div>
   </footer>
 
   <script src="/static/js/common.js"></script>
+  <script src="/static/js/auth.js"></script>
   <script>
     let currentCategory = 'all';
     let allPosts = [];
@@ -123,6 +121,10 @@
 
     // Check authentication and show/hide create blog link
     document.addEventListener('DOMContentLoaded', function() {
+      // Call updateAuthUI from auth.js to handle navbar
+      if (typeof updateAuthUI === 'function') {
+        updateAuthUI();
+      }
       checkAuthenticationAndShowCreateBlogLink();
       loadFeaturedPosts();
       loadCategories();
@@ -130,17 +132,17 @@
     });
 
     function checkAuthenticationAndShowCreateBlogLink() {
-      const token = localStorage.getItem('google_auth_token');
+      const savedUser = localStorage.getItem('user');
       const createBlogLink = document.getElementById('create-blog-link');
       
-      if (!token) {
-        createBlogLink.style.display = 'none';
+      if (!savedUser || savedUser === 'null' || savedUser === 'undefined') {
+        if (createBlogLink) createBlogLink.style.display = 'none';
         return;
       }
 
       try {
-        const decoded = jwt_decode(token);
-        const email = decoded.email;
+        const user = JSON.parse(savedUser);
+        const email = user.email;
         
         if (email === 'dxdelvin@gmail.com') {
           createBlogLink.style.display = 'inline-block';
@@ -148,8 +150,8 @@
           createBlogLink.style.display = 'none';
         }
       } catch (error) {
-        console.error('Error decoding token:', error);
-        createBlogLink.style.display = 'none';
+        console.error('Error parsing user data:', error);
+        if (createBlogLink) createBlogLink.style.display = 'none';
       }
     }
 

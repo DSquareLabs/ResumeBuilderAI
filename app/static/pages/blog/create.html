@@ -16,7 +16,6 @@
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 fill=%22white%22>AI</text></svg>">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 </head>
 
 <body>
@@ -174,7 +173,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2024 ResumeAI. All rights reserved.</p>
+        <p>&copy; 2026 ResumeAI. All rights reserved.</p>
       </div>
     </div>
   </footer>
@@ -183,60 +182,9 @@
   <script>
     // Check authentication on page load
     document.addEventListener('DOMContentLoaded', function() {
-      checkAuthentication();
-    });
-
-    function checkAuthentication() {
-      const token = localStorage.getItem('google_auth_token');
-      if (!token) {
-        showAccessDenied();
-        return;
-      }
-
-      try {
-        const decoded = jwt_decode(token);
-        const email = decoded.email;
-        
-        if (email !== 'dxdelvin@gmail.com') {
-          showAccessDenied();
-        } else {
-          // User is authenticated and authorized
-          initializePage();
-        }
-      } catch (error) {
-        console.error('Error decoding token:', error);
-        showAccessDenied();
-      }
-    }
-
-    function showAccessDenied() {
-      const container = document.querySelector('.admin-container');
-      container.innerHTML = `
-        <div style="text-align: center; padding: 100px 20px;">
-          <h1 style="color: #dc3545; margin-bottom: 20px;">Access Denied</h1>
-          <p style="color: #666; font-size: 1.1rem; margin-bottom: 30px;">
-            You don't have permission to access this page. This area is restricted to administrators only.
-          </p>
-          <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-            <button onclick="signInWithGoogle()" class="btn btn-primary">
-              Sign in with Google
-            </button>
-            <a href="/blog" class="btn btn-secondary">
-              Back to Blog
-            </a>
-          </div>
-          <p style="color: #999; margin-top: 30px; font-size: 0.9rem;">
-            If you are dxdelvin@gmail.com, please sign in with your Google account to access this page.
-          </p>
-        </div>
-      `;
-    }
-
-    function initializePage() {
-      // Page is already loaded with the form, just make sure everything works
-      console.log('User authenticated and authorized');
       setupFormHandlers();
-    }
+      updateAuthUI();
+    });
 
     function setupFormHandlers() {
       // Auto-generate slug from title
@@ -338,15 +286,11 @@
     }
 
     function showMessage(message, type = 'success') {
-      const container = document.getElementById('message-container');
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `${type}-message`;
-      messageDiv.textContent = message;
-      container.appendChild(messageDiv);
-      
-      setTimeout(() => {
-        messageDiv.remove();
-      }, 5000);
+      if (type === 'success') {
+        showToast(message, 'success');
+      } else {
+        showToast(message, 'error');
+      }
     }
 
     async function saveDraft() {
@@ -401,16 +345,6 @@
       } finally {
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-      }
-    }
-
-    function signInWithGoogle() {
-      // Trigger Google Sign-In
-      if (window.google && window.google.accounts && window.google.accounts.id) {
-        window.google.accounts.id.prompt();
-      } else {
-        // Fallback: redirect to main page to sign in
-        window.location.href = '/?redirect=' + encodeURIComponent(window.location.pathname);
       }
     }
   </script>

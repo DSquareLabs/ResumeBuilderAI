@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 import io
 import re
 import json
+import random
 
 from bs4 import BeautifulSoup
 from docx import Document
@@ -25,6 +26,9 @@ from app.database import engine, Base, get_db
 from app.models.profile import Profile
 from app.models.payment import Payment
 from app.models.blog import BlogPost
+from app.models.comment import Comment
+from app.models.like import BlogLike
+from app.models.comment_like import CommentLike
 
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
@@ -615,6 +619,9 @@ app.include_router(cover_letter_router)
 
 from app.api.blog import router as blog_router
 app.include_router(blog_router)
+
+from app.api.comments import router as comments_router
+app.include_router(comments_router)
 
 # Custom 404 Error Handler
 @app.exception_handler(StarletteHTTPException)
