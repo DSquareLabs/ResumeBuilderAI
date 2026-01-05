@@ -220,21 +220,101 @@ function renderBlogPost(post) {
 }
 
 function formatContent(content) {
-  // Convert line breaks to paragraphs and handle basic markdown
-  return content
-    .split('\n\n')
-    .map(paragraph => {
-      if (paragraph.trim().startsWith('#')) {
-        return paragraph; // Keep headers as-is
-      } else if (paragraph.trim().startsWith('-') || paragraph.trim().startsWith('*')) {
-        return paragraph; // Keep lists as-is
-      } else if (paragraph.trim().startsWith('>')) {
-        return `<blockquote>${paragraph.replace(/^>\s*/, '')}</blockquote>`;
+  const applyInline = (text) => {
+    return text
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  };
+
+  const lines = (content || '').replace(/\r\n/g, '\n').split('\n');
+  let html = '';
+  let inList = false;
+  let inCode = false;
+  let listTag = 'ul';
+  let codeBuffer = [];
+
+  const flushList = () => {
+    if (inList) {
+      html += `</${listTag}>`;
+      inList = false;
+    }
+  };
+
+  const flushCode = () => {
+    if (inCode) {
+      html += `<pre><code>${codeBuffer.join('\n')}</code></pre>`;
+      codeBuffer = [];
+      inCode = false;
+    }
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Code fences
+    if (line.startsWith('```')) {
+      if (inCode) {
+        flushCode();
       } else {
-        return `<p>${paragraph}</p>`;
+        flushList();
+        inCode = true;
+        codeBuffer = [];
       }
-    })
-    .join('');
+      continue;
+    }
+
+    if (inCode) {
+      codeBuffer.push(line);
+      continue;
+    }
+
+    // Headings
+    const headingMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
+    if (headingMatch) {
+      flushList();
+      const level = headingMatch[1].length;
+      const text = applyInline(headingMatch[2]);
+      html += `<h${level}>${text}</h${level}>`;
+      continue;
+    }
+
+    // Blockquote
+    if (trimmed.startsWith('>')) {
+      flushList();
+      html += `<blockquote>${applyInline(trimmed.replace(/^>\s*/, ''))}</blockquote>`;
+      continue;
+    }
+
+    // Lists
+    const unorderedMatch = trimmed.match(/^[-*]\s+(.*)$/);
+    const orderedMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (unorderedMatch || orderedMatch) {
+      const currentListTag = orderedMatch ? 'ol' : 'ul';
+      const itemText = applyInline(unorderedMatch ? unorderedMatch[1] : orderedMatch[1]);
+      if (!inList || listTag !== currentListTag) {
+        flushList();
+        listTag = currentListTag;
+        inList = true;
+        html += `<${listTag}>`;
+      }
+      html += `<li>${itemText}</li>`;
+      continue;
+    }
+
+    // Paragraphs or blank lines
+    if (trimmed === '') {
+      flushList();
+      html += '<br />';
+    } else {
+      flushList();
+      html += `<p>${applyInline(trimmed)}</p>`;
+    }
+  }
+
+  flushList();
+  flushCode();
+  return html;
 }
 
 async function loadRelatedPosts(category) {
