@@ -15,7 +15,7 @@ class BlogPost(Base):
     published = Column(Boolean, default=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    author_name = Column(String(100), default="ResumeAI Team")
+    author_name = Column(String(100), default="ResumeMATCH Team")
     category = Column(String(50), index=True)
     tags = Column(String(255))
     read_time_minutes = Column(Integer, default=5)
