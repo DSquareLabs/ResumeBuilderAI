@@ -169,7 +169,8 @@ def dynamic_landing_page(request: Request, job_role: str):
         "title": f"Free AI Resume Builder for {clean_role}s | Match JD",
         "description": f"Build a {clean_role} resume that passes ATS. {seo_text}",
         "h1_text": f"Generate Resume and Letters for {clean_role} ",
-        "hero_subtext": seo_text
+        "hero_subtext": seo_text,
+        "job_role": job_role
     })
 
 @app.post("/api/generate-resume")

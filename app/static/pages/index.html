@@ -144,6 +144,13 @@
             <span class="text-gradient">From Job Descriptions.</span>
           </h1>
           <p class="hero-subtext">{{ hero_subtext }}</p>
+          {% if job_role %}
+          <p class="hero-blog-link">
+            <a href="/blog/how-to-write-a-winning-{{ job_role }}-resume-2026" class="blog-link">
+              📖 Read our guide: How to Write a Winning {{ job_role|replace('-', ' ')|title }} Resume
+            </a>
+          </p>
+          {% endif %}
 
           <div class="hero-stats" aria-label="Product highlights">
             <div class="hero-stat">
@@ -552,10 +559,15 @@
           </ul>
         </div>
         <div class="footer-section">
-          <h4>Resources</h4>
+          <h4>Resume Guides</h4>
           <ul>
-            <li><a href="/privacy-policy">Privacy Policy</a></li>
-            <li><a href="/extra/contact">Contact</a></li>
+            <li><a href="/blog/how-to-write-a-winning-software-engineer-resume-2026">Software Engineer</a></li>
+            <li><a href="/blog/how-to-write-a-winning-frontend-developer-resume-2026">Frontend Developer</a></li>
+            <li><a href="/blog/how-to-write-a-winning-data-scientist-resume-2026">Data Scientist</a></li>
+            <li><a href="/blog/how-to-write-a-winning-product-manager-resume-2026">Product Manager</a></li>
+            <li><a href="/blog/how-to-write-a-winning-nurse-resume-2026">Nurse</a></li>
+            <li><a href="/blog/how-to-write-a-winning-project-manager-resume-2026">Project Manager</a></li>
+            <li><a href="/blog">View All Guides →</a></li>
           </ul>
         </div>
       </div>

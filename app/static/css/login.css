@@ -203,6 +203,23 @@ body.landing .hero-content {
   max-width: 500px;
 }
 
+.hero-blog-link {
+  margin-bottom: 20px;
+}
+
+.hero-blog-link .blog-link {
+  color: #0a66c2;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: color 0.2s ease;
+}
+
+.hero-blog-link .blog-link:hover {
+  color: #004182;
+  text-decoration: underline;
+}
+
 .hero-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
