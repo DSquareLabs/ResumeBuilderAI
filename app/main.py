@@ -146,7 +146,7 @@ def style_landing_page(request: Request, style: str):
     return templates.TemplateResponse("index.html", {
         "request": request,
         # 🟢 SEO TITLE: "Free Harvard Resume Template..."
-        "title": f"Free {clean_style} Resume Template | AI Builder",
+        "title": f"Free {clean_style} Resume Template | Resume Match",
         
         # 🟢 META DESCRIPTION: Unique for each style
         "description": f"Build a {clean_style} style resume instantly. A {desc}. Export to PDF for free.",
@@ -155,7 +155,7 @@ def style_landing_page(request: Request, style: str):
         "h1_text": f"The Ultimate {clean_style} Resume Template",
         
         # 🟢 SUBTEXT: Why this specific style matters
-        "hero_subtext": f"Don't struggle with formatting. Generate a perfect {clean_style} resume that recruiters love and ATS systems can read."
+        "hero_subtext": f"Don't struggle with formatting. Create a professional {clean_style} resume that recruiters love and ATS systems can read."
     })
 
 @app.get("/resume-for-{job_role}")
@@ -173,6 +173,24 @@ def dynamic_landing_page(request: Request, job_role: str):
         "h1_text": f"Generate Resume and Letters for {clean_role} ",
         "hero_subtext": seo_text,
         "job_role": job_role
+    })
+
+@app.get("/cover-letter-for-{job_role}")
+def cover_letter_landing_page(request: Request, job_role: str):
+    if job_role not in ALLOWED_ROLES:
+        raise HTTPException(status_code=404, detail="Job role not found")
+    
+    clean_role = job_role.replace("-", " ").title()
+    seo_text = ROLE_DESCRIPTIONS.get(job_role, f"Write a compelling {clean_role} cover letter tailored to the job description you're targeting.")
+   
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+        "title": f"Free Cover Letter Generator for {clean_role}s | Stand Out",
+        "description": f"Write a personalized {clean_role} cover letter that matches the job description. {seo_text}",
+        "h1_text": f"Generate Cover Letters for {clean_role}s",
+        "hero_subtext": f"Stop sending generic cover letters. Create personalized letters that showcase your value to {clean_role} roles.",
+        "job_role": job_role,
+        "page_type": "cover_letter"
     })
 
 @app.post("/api/generate-resume")
@@ -545,10 +563,10 @@ def login_page(request: Request, db: Session = Depends(get_db)):
     user_count = get_user_count(db)
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "title": "Resume Match | AI Resume Builder from Job Descriptions",
-        "description": "Generate ATS-friendly resumes and cover letters for Any Job Description",
-        "h1_text": "Generate AI Resumes & Cover Letters ",
-        "hero_subtext": "Don't just update your old CV optimize it. Match it with Job Description with AI.",
+        "title": "Resume Match | Build Resumes & Cover Letters from Job Descriptions",
+        "description": "Generate ATS-friendly resumes and cover letters matched to any job description",
+        "h1_text": "Build Better Resumes & Cover Letters",
+        "hero_subtext": "Stop wasting time on formatting. Match your resume and cover letter directly to the job description.",
         "user_count": user_count
     })
 
@@ -559,6 +577,22 @@ def profile_page():
 @app.get("/builder")
 def builder_page():
     return FileResponse("app/static/pages/builder.html")
+
+@app.get("/build-resume")
+def build_resume_page(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("builder.html", {
+        "request": request,
+        "title": "Free Resume Builder | Build ATS-Friendly Resumes Online",
+        "description": "Create professional, ATS-optimized resumes from your job description. No AI wrapper—pure resume building power. Export to PDF instantly.",
+    })
+
+@app.get("/build-coverletter")
+def build_coverletter_page(request: Request, db: Session = Depends(get_db)):
+    return templates.TemplateResponse("builder.html", {
+        "request": request,
+        "title": "Free Cover Letter Generator | Write Compelling Letters",
+        "description": "Generate personalized cover letters tailored to specific job descriptions. Stand out with authentic, targeted letters that get you interviews.",
+    })
 
 @app.get("/pricing")
 def pricing_page():

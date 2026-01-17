@@ -614,22 +614,46 @@
     // Checks if the user landed on a specific "Programmatic" page
     (function () {
       const path = window.location.pathname;
+      let documentType = 'resume'; // default
 
       // Check if URL matches "/resume-for-..."
       if (path.includes('/resume-for-')) {
-        // Extract the role (e.g., "nurse" from "/resume-for-nurse")
         const role = path.split('/resume-for-')[1];
-
         if (role) {
-          // Save to browser memory. This survives Login & Redirects!
           localStorage.setItem("target_role", role);
-          console.log("🎯 Intent captured:", role);
+          localStorage.setItem("document_type", "resume");
+          console.log("🎯 Intent captured (Resume):", role);
         }
       }
-      // Also capture for cover letters if you added that
+      // Check if URL matches "/cover-letter-for-..."
       else if (path.includes('/cover-letter-for-')) {
         const role = path.split('/cover-letter-for-')[1];
-        if (role) localStorage.setItem("target_role", role);
+        if (role) {
+          localStorage.setItem("target_role", role);
+          localStorage.setItem("document_type", "cover_letter");
+          documentType = 'cover_letter';
+          console.log("🎯 Intent captured (Cover Letter):", role);
+        }
+      }
+
+      // Update CTA button based on document type
+      const ctaButton = document.querySelector('.btn-cta-primary');
+      if (ctaButton && documentType === 'cover_letter') {
+        ctaButton.href = '/build-coverletter';
+        ctaButton.innerHTML = '<span>✍️</span> Start Writing Now';
+      } else if (ctaButton && documentType === 'resume') {
+        ctaButton.href = '/build-resume';
+        ctaButton.innerHTML = '<span>🚀</span> Start Building Now';
+      }
+
+      // Update hero button based on document type
+      const heroButton = document.querySelector('#hero-welcome-area a');
+      if (heroButton && documentType === 'cover_letter') {
+        heroButton.href = '/build-coverletter';
+        heroButton.innerHTML = 'Write Cover Letter &rarr;';
+      } else if (heroButton && documentType === 'resume') {
+        heroButton.href = '/build-resume';
+        heroButton.innerHTML = 'Build Resume &rarr;';
       }
     })();
   </script>

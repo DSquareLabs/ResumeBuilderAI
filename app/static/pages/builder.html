@@ -363,6 +363,31 @@
 
   <script>
     window.addEventListener('DOMContentLoaded', () => {
+    // ========== AUTO DETECT ROUTE MODE ==========
+    const currentPath = window.location.pathname;
+    const titleEl = document.getElementById('builder-title');
+    const subtitleEl = document.getElementById('builder-subtitle');
+    
+    // Check if user came from /build-coverletter or /build-resume
+    if (currentPath.includes('/build-coverletter')) {
+      // Auto-switch to Cover Letter mode
+      if (titleEl) titleEl.innerText = 'Cover Letter Studio';
+      if (subtitleEl) subtitleEl.innerText = 'Craft Your Perfect Cover Letter';
+      // Switch to Cover Letter tab
+      setTimeout(() => {
+        switchView('coverletter');
+      }, 100);
+    } else if (currentPath.includes('/build-resume')) {
+      // Auto-switch to Resume mode
+      if (titleEl) titleEl.innerText = 'Resume Builder Studio';
+      if (subtitleEl) subtitleEl.innerText = 'Build Your Perfect Resume';
+      // Ensure Resume tab is active (default)
+      setTimeout(() => {
+        switchView('resume');
+      }, 100);
+    }
+    // ========== END AUTO DETECT ==========
+
     let role = localStorage.getItem("target_role");
 
     if (role) {

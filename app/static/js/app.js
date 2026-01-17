@@ -50,7 +50,9 @@ async function loadUserProfile() {
   // 1. No user stored? Redirect unless on public pricing page
   if (!storedUser) {
     if (window.location.pathname !== "/pricing" && window.location.pathname !== "/" && 
-      window.location.pathname !== "/builder") {
+      window.location.pathname !== "/builder" && 
+      window.location.pathname !== "/build-resume" && 
+      window.location.pathname !== "/build-coverletter") {
       window.location.href = "/";
     }
     const creditEl = document.getElementById("creditCount");
