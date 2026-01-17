@@ -26,13 +26,18 @@
   <meta name="twitter:title" content="{{ title }}" />
   <meta name="twitter:description" content="Paste a Job Description -> Get a Resume. Try the AI Resume Builder now." />
 
-  <link rel="stylesheet" href="/static/css/login.css" />
-  <link rel="stylesheet" href="/static/css/navbar.css" />
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="preload" href="/static/css/login.css" as="style" onload="this.rel='stylesheet'">
+  <link rel="preload" href="/static/css/navbar.css" as="style" onload="this.rel='stylesheet'">
+  <link rel="preload" href="/static/css/styles.css" as="style" onload="this.rel='stylesheet'">
+  <noscript>
+    <link rel="stylesheet" href="/static/css/login.css" />
+    <link rel="stylesheet" href="/static/css/navbar.css" />
+    <link rel="stylesheet" href="/static/css/styles.css" />
+  </noscript>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 fill=%22white%22>AI</text></svg>">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js" defer></script>
 
   <script type="application/ld+json">
     {
@@ -275,7 +280,7 @@
         </div>
 
         <div class="video-wrapper">
-          <video controls muted loop width="100%" autoplay>
+          <video controls muted loop width="100%" autoplay preload="metadata" playsinline>
             <source src="/static/video/ResumeAI.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
@@ -284,7 +289,14 @@
         <h3 class="arcade-heading">Interactive Demo</h3>
         <!--ARCADE EMBED START-->
         <div class="arcade-embed">
-          <iframe src="https://demo.arcade.software/J1bJ1eX4DZ8thTIVKXM4?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true" title="Create a Resume and Cover Letter Tailored to a Job Description" frameborder="0" loading="lazy" webkitallowfullscreen mozallowfullscreen allowfullscreen allow="clipboard-write"></iframe>
+          <iframe
+            src="https://demo.arcade.software/J1bJ1eX4DZ8thTIVKXM4?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true"
+            title="Create a Resume and Cover Letter Tailored to a Job Description"
+            frameborder="0"
+            loading="lazy"
+            referrerpolicy="strict-origin-when-cross-origin"
+            sandbox="allow-scripts allow-forms allow-popups allow-presentation allow-clipboard-write"
+          ></iframe>
         </div>
         <!--ARCADE EMBED END-->
       </div>
@@ -607,7 +619,7 @@
     </div>
   </footer>
 
-  <script src="/static/js/auth.js"></script>
+  <script defer src="/static/js/auth.js"></script>
   <script defer src="/static/js/common.js"></script>
   <script>
     // THE INTENT TRACKER
