@@ -179,6 +179,8 @@ body.landing .hero-content {
   border-radius: 6px;
   display: inline-block;
   margin-bottom: 20px;
+  min-height: 32px;
+  contain: layout style;
 }
 
 .hero h1 {
@@ -569,6 +571,17 @@ footer {
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   border: 1px solid rgba(255,255,255,0.1);
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  contain: layout style paint;
+}
+
+.arcade-placeholder-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
 }
 
 .arcade-embed iframe {

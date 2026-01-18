@@ -5,8 +5,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ title }}</title>
+  
+  <!-- Critical CSS for above-the-fold content -->
+  <style>
+    *,*::before,*::after{box-sizing:border-box}body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+    .navbar{background:#fff;height:60px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:center;position:sticky;top:0;z-index:100}
+    .nav-container{width:100%;max-width:1200px;padding:0 20px;display:flex;justify-content:space-between;align-items:center}
+    .brand{font-weight:700;font-size:1.2rem;color:#0a66c2}
+    .nav-links{display:flex;align-items:center;gap:20px}
+    .nav-links a{text-decoration:none;font-size:.9rem;color:#666;transition:color .2s}
+    .badge{min-height:32px;contain:layout style}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
 
   <meta name="description" content="{{ description }}" />
   <meta name="keywords"
@@ -34,6 +49,15 @@
     <link rel="stylesheet" href="/static/css/navbar.css" />
     <link rel="stylesheet" href="/static/css/styles.css" />
   </noscript>
+  
+  <!-- DNS prefetch for external resources -->
+  <link rel="dns-prefetch" href="https://accounts.google.com">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+  
+  <!-- Preload critical image -->
+  <link rel="preload" href="/static/img/og-image.jpg" as="image" fetchpriority="low">
+  
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 fill=%22white%22>AI</text></svg>">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -280,24 +304,29 @@
         </div>
 
         <div class="video-wrapper">
-          <video controls muted loop width="100%" autoplay preload="metadata" playsinline>
+          <video autoplay muted loop width="100%" playsinline loading="lazy">
             <source src="/static/video/ResumeAI.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
         </div>
 
         <h3 class="arcade-heading">Interactive Demo</h3>
-        <!--ARCADE EMBED START-->
-        <div class="arcade-embed">
-          <iframe
-            src="https://demo.arcade.software/J1bJ1eX4DZ8thTIVKXM4?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true"
-            title="Create a Resume and Cover Letter Tailored to a Job Description"
-            frameborder="0"
-            loading="lazy"
-            referrerpolicy="strict-origin-when-cross-origin"
-            sandbox="allow-scripts allow-forms allow-popups allow-presentation allow-clipboard-write"
-          ></iframe>
+        <!--ARCADE EMBED START - Click to Load for Performance-->
+        <div class="arcade-embed" id="arcade-placeholder" onclick="loadArcadeDemo()" style="cursor:pointer;">
+          <div class="arcade-placeholder-content">
+            <span style="font-size:48px;">▶️</span>
+            <p style="margin:10px 0 0;font-weight:600;color:#0a66c2;">Click to Load Interactive Demo</p>
+            <p style="font-size:0.85rem;color:#666;">Learn how to make one!</p>
+          </div>
         </div>
+        <script>
+        function loadArcadeDemo() {
+          var container = document.getElementById('arcade-placeholder');
+          container.innerHTML = '<iframe src="https://demo.arcade.software/J1bJ1eX4DZ8thTIVKXM4?embed&embed_mobile=inline&embed_desktop=inline&show_copy_link=true" title="Create a Resume and Cover Letter Tailored to a Job Description" frameborder="0" loading="eager" style="width:100%;height:100%;border:0;"></iframe>';
+          container.style.cursor = 'default';
+          container.onclick = null;
+        }
+        </script>
         <!--ARCADE EMBED END-->
       </div>
     </section>

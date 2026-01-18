@@ -1,15 +1,17 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
 from fastapi.responses import Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 from app.api.profile import router as profile_router
 from app.api.billing import router as billing_router
 from app.api.promocode import router as promocode_router
@@ -55,27 +57,51 @@ from app.database import get_db
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPEN_API_KEY"))
 
-app = FastAPI()
-templates = Jinja2Templates(directory="app/static/pages")
-
-origins = [
-    "https://myresumematch.com",
-    "http://localhost:8000" # Keep for local testing
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_methods=origins,
-    allow_headers=origins,
-)
-
 ENV = os.getenv("ENV", "dev")
 
 app = FastAPI(
     docs_url=None if ENV == "prod" else "/docs",
     redoc_url=None if ENV == "prod" else "/redoc"
 )
+
+# GZip compression for all responses > 500 bytes
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+# Cache headers middleware for static assets
+class CacheControlMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        
+        # Static assets: cache for 1 year
+        if path.startswith("/static/"):
+            if any(path.endswith(ext) for ext in [".css", ".js"]):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif any(path.endswith(ext) for ext in [".jpg", ".jpeg", ".png", ".gif", ".svg", ".webp", ".ico"]):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif any(path.endswith(ext) for ext in [".mp4", ".webm", ".ogg"]):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            elif any(path.endswith(ext) for ext in [".woff", ".woff2", ".ttf", ".eot"]):
+                response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        
+        return response
+
+app.add_middleware(CacheControlMiddleware)
+
+# CORS middleware
+origins = [
+    "https://myresumematch.com",
+    "http://localhost:8000"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+templates = Jinja2Templates(directory="app/static/pages")
 
 class ResumeInput(BaseModel):
     style: str

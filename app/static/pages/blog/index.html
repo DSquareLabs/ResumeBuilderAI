@@ -6,7 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Resume Match Career Blog | Expert Resume & Job Search Tips</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
 
   <meta name="description" content="Expert career advice, resume writing tips, and job search strategies. Learn how to create ATS-optimized resumes and compelling cover letters that get interviews." />
   <meta name="keywords"
@@ -146,7 +148,7 @@
     let currentCategory = 'all';
     let allPosts = [];
     let categories = [];
-    const extraCategories = ["Career Jobs"]; // Always show after All
+    const extraCategories = []; // Always show after All
 
     // Check authentication and show/hide create blog link
     document.addEventListener('DOMContentLoaded', function() {

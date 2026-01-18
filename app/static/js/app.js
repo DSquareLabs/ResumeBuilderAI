@@ -1246,76 +1246,11 @@ function switchView(view) {
             refineBar.style.display = hasContent(clEl) ? 'block' : 'none';
         }
     }
-    else if (view === 'history') {
-        historyEl.style.display = 'block';
-        if(previewActions) previewActions.style.visibility = 'hidden';
-        if(refineBar) refineBar.style.display = 'none';
-        
-        renderHistory();
-    }
+
     updateGenerateButtonText(view);
 }
 
-// 3. New Render Function (Mock Data)
-function renderHistory() {
-    const historyEl = document.getElementById('output-history');
-    
-    // Mock Data (Later fetch from API)
-    const mockSessions = [
-        { id: 1, type: 'resume', title: 'Software Engineer - Google', date: '2 mins ago', score: 92 },
-        { id: 2, type: 'cover_letter', title: 'Cover Letter - Netflix', date: '2 days ago', score: null },
-        { id: 3, type: 'resume', title: 'Frontend Dev - Startup', date: '5 days ago', score: 85 },
-    ];
 
-    if (mockSessions.length === 0) {
-        historyEl.innerHTML = `
-            <div class="empty-state">
-                <span class="material-icons-round empty-icon">history</span>
-                <h3>No History Yet</h3>
-                <p>Your generated resumes will appear here.</p>
-            </div>
-        `;
-        return;
-    }
-
-    let html = '<div class="history-grid">';
-    
-    mockSessions.forEach(session => {
-        const icon = session.type === 'resume' ? 'description' : 'mail';
-        const typeLabel = session.type === 'resume' ? 'Resume' : 'Cover Letter';
-        const scoreBadge = session.score 
-            ? `<div class="history-score">ATS: ${session.score}</div>` 
-            : '';
-
-        html += `
-            <div class="history-card">
-                <div class="history-header">
-                    <div class="history-icon">
-                        <span class="material-icons-round">${icon}</span>
-                    </div>
-                    ${scoreBadge}
-                </div>
-                <div>
-                    <div class="history-title">${session.title}</div>
-                    <div class="history-meta">${typeLabel} • ${session.date}</div>
-                </div>
-                <div class="history-actions">
-                    <button class="btn-history-load" onclick="loadSession(${session.id})">Load</button>
-                    <button class="btn-history-delete"><span class="material-icons-round" style="font-size:16px">delete</span></button>
-                </div>
-            </div>
-        `;
-    });
-
-    html += '</div>';
-    historyEl.innerHTML = html;
-}
-
-// 4. Stub for loading a session
-function loadSession(id) {
-    showToast(`Loading session #${id}... (Backend pending)`, 'info');
-    // Logic: Fetch JSON by ID -> Populate Inputs -> Switch View
-}
 
 // --- MODAL HANDLING ---
 function openCLModal() {
