@@ -633,11 +633,16 @@ def blog_page(request: Request):
     })
 
 @app.get("/blog/{slug}")
-def blog_post_page(request: Request, slug: str):
+def blog_post_page(request: Request, slug: str, db: Session = Depends(get_db)):
+    # Check if blog post exists
+    blog_post = db.query(BlogPost).filter(BlogPost.slug == slug).first()
+    if not blog_post:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    
     return templates.TemplateResponse("blog/post.html", {
         "request": request,
-        "title": "Resume Match Blog | Career Insights",
-        "description": "Read our latest career insights and job search tips",
+        "title": blog_post.title or "Resume Match Blog | Career Insights",
+        "description": blog_post.description or "Read our latest career insights and job search tips",
         "slug": slug
     })
 
