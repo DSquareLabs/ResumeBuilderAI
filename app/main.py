@@ -642,7 +642,7 @@ def blog_post_page(request: Request, slug: str, db: Session = Depends(get_db)):
     return templates.TemplateResponse("blog/post.html", {
         "request": request,
         "title": blog_post.title or "Resume Match Blog | Career Insights",
-        "description": blog_post.description or "Read our latest career insights and job search tips",
+        "description": blog_post.meta_description or "Read our latest career insights and job search tips",
         "slug": slug
     })
 
