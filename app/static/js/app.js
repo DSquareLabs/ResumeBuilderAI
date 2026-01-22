@@ -206,14 +206,18 @@ window.onload = () => {
   const savedScore = localStorage.getItem("autosave_score");
 
   if (savedResume && document.getElementById("output")) {
-      document.getElementById("output").innerHTML = savedResume;
-      document.getElementById("output").contentEditable = true;
+      const outputEl = document.getElementById("output");
+      outputEl.classList.remove("hidden");
+      outputEl.innerHTML = savedResume;
+      outputEl.contentEditable = true;
       document.getElementById("aiRefineBar").style.display = "block";
   }
   
   if (savedCL && document.getElementById("output-cl")) {
-      document.getElementById("output-cl").innerHTML = savedCL;
-      document.getElementById("output-cl").contentEditable = true;
+      const clEl = document.getElementById("output-cl");
+      clEl.classList.remove("hidden");
+      clEl.innerHTML = savedCL;
+      clEl.contentEditable = true;
   }
 
   if (savedScore && document.getElementById("atsScore")) {
@@ -761,8 +765,10 @@ async function generateResume() {
     }
 
     // Render resume
-    document.getElementById("output").innerHTML = data.resume_html;
-    document.getElementById("output").contentEditable = true;
+    const outputEl = document.getElementById("output");
+    outputEl.classList.remove("hidden"); // Show the output container
+    outputEl.innerHTML = data.resume_html;
+    outputEl.contentEditable = true;
 
     // ATS Score
     if (data.ats_score !== undefined) {
@@ -1221,15 +1227,15 @@ function switchView(view) {
     const previewActions = document.getElementById('previewActions'); // ATS & Download buttons
     const refineBar = document.getElementById('aiRefineBar');
 
-    // Hide all first
-    resumeEl.style.display = 'none';
-    clEl.style.display = 'none';
-    historyEl.style.display = 'none';
+    // Hide all first (use both class and style for consistency)
+    resumeEl.classList.add('hidden');
+    clEl.classList.add('hidden');
+    if (historyEl) historyEl.classList.add('hidden');
 
     const hasContent = (element) => element && !element.querySelector('.empty-state');
 
     if (view === 'resume') {
-        resumeEl.style.display = 'block';
+        resumeEl.classList.remove('hidden');
         if(previewActions) previewActions.style.visibility = 'visible';
         if(atsContainer) atsContainer.style.display = 'flex';
         // Only show Refine bar if Resume is actually generated
@@ -1238,7 +1244,7 @@ function switchView(view) {
         }
     } 
     else if (view === 'coverletter') {
-        clEl.style.display = 'block';
+        clEl.classList.remove('hidden');
         if(previewActions) previewActions.style.visibility = 'visible';
         if(atsContainer) atsContainer.style.display = 'none';
         // Only show Refine bar if Cover Letter is actually generated
