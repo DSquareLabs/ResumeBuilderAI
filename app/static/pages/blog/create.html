@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="/static/css/blog.css" />
   </noscript>
   <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2250%22 fill=%22white%22>AI</text></svg>">
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%230a66c2%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22central%22 text-anchor=%22middle%22 font-family=%22sans-serif%22 font-weight=%22900%22 font-size=%2238%22 fill=%22white%22>RM</text></svg>">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
@@ -95,6 +95,11 @@
           <div class="form-group">
             <label for="read_time_minutes">Reading Time (minutes) *</label>
             <input type="number" id="read_time_minutes" name="read_time_minutes" required min="1" max="60" value="5">
+          </div>
+
+          <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px;">
+            <input type="checkbox" id="is_ai_written" name="is_ai_written" checked style="width: auto; margin: 0;">
+            <label for="is_ai_written" style="margin: 0; display: inline;">Written by AI</label>
           </div>
           
           <div class="form-group">
@@ -238,6 +243,7 @@
       const category = document.getElementById('category').value;
       const author = document.getElementById('author_name').value;
       const readTime = document.getElementById('read_time_minutes').value;
+      const isAiWritten = document.getElementById('is_ai_written').checked;
       
       const previewContent = document.getElementById('preview-content');
       const previewStatus = document.getElementById('preview-status');
@@ -272,6 +278,7 @@
       
       previewContent.innerHTML = `
         ${category ? `<div style="background: #0a66c2; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; display: inline-block; margin-bottom: 20px;">${category}</div>` : ''}
+        ${isAiWritten ? `<div style="background: #e0e7ff; color: #4338ca; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; display: inline-block; margin-bottom: 20px; margin-left: 10px;">🤖 AI Written</div>` : ''}
         ${title ? `<h1 style="color: #1a1a1a; margin-bottom: 20px;">${title}</h1>` : ''}
         <div style="display: flex; gap: 20px; margin-bottom: 30px; font-size: 0.9rem; color: #666;">
           ${author ? `<span><strong>${author}</strong></span>` : ''}
@@ -312,6 +319,7 @@
       
       // Convert published to boolean
       data.published = true;
+      data.is_ai_written = document.getElementById('is_ai_written').checked;
       
       // Validation
       if (!data.title || !data.slug || !data.content || !data.category) {

@@ -3,6 +3,7 @@ const PRICING = {
   eur: { symbol: "€", basic: "1.29", popular: "2.49", pro: "4.99" }
 };
 
+let currentCurrency = 'eur'; // Default currency
 
 async function selectPlan(plan) {
   const user = JSON.parse(localStorage.getItem("user"));

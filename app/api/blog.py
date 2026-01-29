@@ -28,7 +28,8 @@ def serialize_blog_post(post):
         "author_name": post.author_name,
         "category": post.category,
         "tags": post.tags,
-        "read_time_minutes": post.read_time_minutes
+        "read_time_minutes": post.read_time_minutes,
+        "is_ai_written": post.is_ai_written
     }
 
 class BlogPostResponse(BaseModel):
@@ -46,6 +47,7 @@ class BlogPostResponse(BaseModel):
     category: Optional[str] = None
     tags: Optional[str] = None
     read_time_minutes: int
+    is_ai_written: bool = True
 
     class Config:
         from_attributes = True
@@ -61,6 +63,7 @@ class BlogPostCreate(BaseModel):
     category: Optional[str] = None
     tags: Optional[str] = None
     read_time_minutes: int = 5
+    is_ai_written: bool = True
 
 @router.post("/posts", response_model=BlogPostResponse)
 def create_blog_post(

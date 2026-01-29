@@ -126,6 +126,7 @@ function renderBlogPost(post) {
     <article>
       <header class="blog-post-header">
         ${post.category ? `<div class="blog-post-category">${post.category}</div>` : ''}
+        ${post.is_ai_written ? '<div class="ai-tag" style="margin-bottom: 20px; padding: 6px 16px; font-size: 0.9rem;">🤖 AI Written</div>' : ''}
         <h1 class="blog-post-title">${post.title}</h1>
         <div class="blog-post-meta">
           <span class="blog-post-author">${post.author_name}</span>

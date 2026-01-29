@@ -1,78 +1,61 @@
-# Resume Builder AI
+# ResumeMATCH
 
-Build clean, ATS-friendly resumes and also cover letters from a simple web UI. Choose a layout
-(Harvard, Normal, Minimal, or Custom), add your details, and export to PDF.
+**Stop rewriting your resume for every job.** Paste a job description, get a tailored resume and cover letter in seconds.
 
-<img width="1545" height="938" alt="Resume builder preview 1" src="https://github.com/user-attachments/assets/4148d8e6-385b-4195-a908-df6668c7cbff" />
-<img width="1705" height="965" alt="Resume builder preview 2" src="https://github.com/user-attachments/assets/3a40a347-bb0f-4dc1-ac12-d5ce6d92fda7" />
-<img width="1017" height="963" alt="Resume builder preview 3" src="https://github.com/user-attachments/assets/06bbc1fd-8c4c-48a0-9cd7-ad87fdba6f47" />
+🔗 **Live:** [myresumematch.com](https://myresumematch.com)
 
----
-
-## Highlights
-
-- Google login
-- Profile management
-- Resume generation (HTML + CSS)
-- Multiple resume styles
-- Inline editing
-- Print / save as PDF
-- Credit-based usage (planned)
+<img width="1545" height="938" alt="ResumeMATCH - Create tailored resumes" src="https://github.com/user-attachments/assets/4148d8e6-385b-4195-a908-df6668c7cbff" />
+<img width="1705" height="965" alt="ResumeMATCH - Multiple styles" src="https://github.com/user-attachments/assets/3a40a347-bb0f-4dc1-ac12-d5ce6d92fda7" />
+<img width="1017" height="963" alt="ResumeMATCH - Export to PDF" src="https://github.com/user-attachments/assets/06bbc1fd-8c4c-48a0-9cd7-ad87fdba6f47" />
 
 ---
 
-## Tech Stack
+## ✨ What makes it different?
 
-- Frontend: HTML, CSS, Vanilla JavaScript
-- Backend: Python, FastAPI
+- **Match to any job posting** – Paste a JD, get a resume that speaks to it
+- **Cover letters included** – Write your narrative, we'll craft the letter
+- **Multiple styles** – Harvard, Modern, Minimal, or create your own
+- **Edit inline** – Tweak anything before you download
+- **ATS-optimized** – Passes automated screening systems
+- **Privacy-first** – Your resume stays on your device
+
+---
+
+## 🚀 Quick Start
+
+1. Go to [myresumematch.com](https://myresumematch.com)
+2. Sign in with Google
+3. Paste a job description
+4. Get your tailored resume + cover letter
+5. Download as PDF
+
+---
+
+## 🛠 For Developers
+
+### Tech Stack
+- Frontend: HTML, CSS, Vanilla JS
+- Backend: Python + FastAPI
 - Database: Supabase (PostgreSQL)
-- Auth: Google Sign-In (client-side)
-- AI: OpenAI API
+- Auth: Google Sign-In
 
----
+### Run locally
 
-## Getting Started
+```bash
+# Clone and setup
+git clone https://github.com/yourusername/ResumeBuilderAI.git
+cd ResumeBuilderAI
 
-### 1) Set environment variables
+# Create .env file with:
+# OPENAI_API_KEY=your_key
+# DATABASE_URL=your_supabase_url
+# GOOGLE_CLIENT_ID=your_client_id
+# GOOGLE_CLIENT_SECRET=your_secret
 
-Create a `.env` file in the project root:
-
-```env
-OPENAI_API_KEY=your_openai_key
-DATABASE_URL=your_supabase_postgres_url
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
-```
-
-### 2) Install and run
-
-Create a virtual environment:
-
-```
+# Install and run
 python -m venv venv
-```
-
-Activate it:
-
-**Windows**
-```
-venv\Scripts\activate
-```
-
-**macOS / Linux**
-```
-source venv/bin/activate
-```
-
-Install dependencies:
-
-```
+venv\Scripts\activate  # Windows
 pip install -r requirements.txt
-```
-
-Run the server:
-
-```
 uvicorn app.main:app --reload
 ```
 
@@ -80,11 +63,16 @@ Open: http://localhost:8000
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
-- app/ — FastAPI app, routes, services, and models
-- static/ — HTML, CSS, JS, and assets
+```
+app/
+├── main.py          # FastAPI routes
+├── api/             # API endpoints
+├── models/          # Database models
+├── services/        # Business logic
+└── static/          # Frontend files
+```
 
 ---
-
 

@@ -264,9 +264,9 @@ def generate_resume(data: ResumeInput, email: str = Depends(get_verified_email),
     
     # --- 🧠 SUPERIOR PROMPT ENGINEERING ---
     system_prompt = """
-    You are a Senior CSS Architect and Elite Career Strategist. and a Great Resume Writer whoes goal is to optimize resumes for both ATS systems and human recruiters.
+    You are a Senior CSS Architect and Elite Career Strategist, and a Great Resume Writer whose goal is to optimize resumes for both ATS systems and human recruiters.
     Your task is to take old/raw resume data and a job description, and transform it into a visually stunning, and rewritten to ATS-optimized HTML resume.
-    Dont be too formal with wordings like professional summary just keep it simple and straight to the point. which human recruiters will love and ATS systems can easily parse.
+    Don't be too formal with wordings like professional summary - just keep it simple and straight to the point, which human recruiters will love and ATS systems can easily parse.
 
     
 

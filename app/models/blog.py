@@ -19,3 +19,4 @@ class BlogPost(Base):
     category = Column(String(50), index=True)
     tags = Column(String(255))
     read_time_minutes = Column(Integer, default=5)
+    is_ai_written = Column(Boolean, default=True)

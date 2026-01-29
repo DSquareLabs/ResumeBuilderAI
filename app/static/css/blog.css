@@ -131,6 +131,18 @@
   margin-bottom: 12px;
 }
 
+.ai-tag {
+  display: inline-block;
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  margin-left: 6px;
+}
+
 .blog-card-title {
   font-size: 1.4rem;
   font-weight: 700;
